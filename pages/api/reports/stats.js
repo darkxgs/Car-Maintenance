@@ -1,30 +1,42 @@
 import sql from '../../../lib/db';
+import { validateAndSanitize, reportQuerySchema } from '../../../lib/validation';
 
 export default async function handler(req, res) {
   try {
-    const { branchId, startDate, endDate } = req.query;
+    // Validate query parameters
+    const validatedQuery = validateAndSanitize(req.query, reportQuerySchema);
+    const { branchId, startDate, endDate } = validatedQuery;
 
-    let whereConditions = [];
-    let params = [];
+    // Build WHERE clause safely with parameterized queries
+    let operations;
 
-    if (branchId) {
-      whereConditions.push(`branch_id = ${branchId}`);
+    if (branchId && startDate && endDate) {
+      operations = await sql`
+        SELECT * FROM operations 
+        WHERE branch_id = ${branchId}
+          AND created_at >= ${startDate}
+          AND created_at <= ${endDate}
+        ORDER BY created_at DESC
+      `;
+    } else if (branchId) {
+      operations = await sql`
+        SELECT * FROM operations 
+        WHERE branch_id = ${branchId}
+        ORDER BY created_at DESC
+      `;
+    } else if (startDate && endDate) {
+      operations = await sql`
+        SELECT * FROM operations 
+        WHERE created_at >= ${startDate}
+          AND created_at <= ${endDate}
+        ORDER BY created_at DESC
+      `;
+    } else {
+      operations = await sql`
+        SELECT * FROM operations 
+        ORDER BY created_at DESC
+      `;
     }
-
-    if (startDate && endDate) {
-      whereConditions.push(`created_at >= ${startDate} AND created_at <= ${endDate}`);
-    }
-
-    const whereClause = whereConditions.length > 0 
-      ? `WHERE ${whereConditions.join(' AND ')}` 
-      : '';
-
-    // Get all operations with filters
-    const operations = await sql`
-      SELECT * FROM operations 
-      ${whereClause ? sql.unsafe(whereClause) : sql``}
-      ORDER BY created_at DESC
-    `;
 
     // Calculate stats
     const totalOperations = operations.length;
@@ -43,13 +55,13 @@ export default async function handler(req, res) {
       if (op.oil_used) {
         oilTypes[op.oil_used] = (oilTypes[op.oil_used] || 0) + 1;
       }
-      
+
       if (op.oil_viscosity) {
         viscosities[op.oil_viscosity] = (viscosities[op.oil_viscosity] || 0) + 1;
       }
-      
+
       totalOilUsed += parseFloat(op.oil_quantity) || 0;
-      
+
       if (op.oil_filter === 1) oilFilterCount++;
       if (op.air_filter === 1) airFilterCount++;
       if (op.cooling_filter === 1) coolingFilterCount++;
@@ -58,7 +70,7 @@ export default async function handler(req, res) {
     // Get operations by branch
     const branches = await sql`SELECT * FROM branches`;
     const branchCounts = {};
-    
+
     for (const branch of branches) {
       const count = operations.filter(op => op.branch_id === branch.id).length;
       branchCounts[branch.name] = count;

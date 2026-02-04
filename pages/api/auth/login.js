@@ -1,5 +1,7 @@
 import sql from '../../../lib/db';
 import bcrypt from 'bcryptjs';
+import { generateAccessToken, generateRefreshToken } from '../../../lib/auth';
+import { validateAndSanitize, loginSchema } from '../../../lib/validation';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -7,11 +9,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password required' });
-    }
+    // Validate input
+    const { username, password } = validateAndSanitize(req.body, loginSchema);
 
     // Get user
     const users = await sql`
@@ -37,7 +36,25 @@ export default async function handler(req, res) {
 
     const branch = branches[0];
 
-    // Return session data
+    // Create token payload
+    const tokenPayload = {
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      branchId: user.branch_id
+    };
+
+    // Generate tokens
+    const accessToken = generateAccessToken(tokenPayload);
+    const refreshToken = generateRefreshToken(tokenPayload);
+
+    // Set refresh token in HTTP-only cookie
+    res.setHeader('Set-Cookie', [
+      `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${7 * 24 * 60 * 60}`, // 7 days
+      `accessToken=${accessToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${15 * 60}` // 15 minutes
+    ]);
+
+    // Return session data and access token
     const session = {
       userId: user.id,
       username: user.username,
@@ -45,12 +62,14 @@ export default async function handler(req, res) {
       role: user.role,
       branchId: user.branch_id,
       branchName: branch ? branch.name : 'غير محدد',
-      loginTime: new Date().toISOString()
+      loginTime: new Date().toISOString(),
+      accessToken, // Client will use this for API calls
+      expiresIn: 900 // 15 minutes in seconds
     };
 
     res.status(200).json(session);
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

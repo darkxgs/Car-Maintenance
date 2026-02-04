@@ -37,7 +37,7 @@ export default function Branches() {
         <main className="main-content">
           <div className="page-header">
             <h1><i className="fas fa-building"></i> إدارة الفروع</h1>
-            <button className="btn btn-primary" onClick={() => {}}><i className="fas fa-plus"></i> إضافة فرع</button>
+            <button className="btn btn-primary" onClick={() => { }}><i className="fas fa-plus"></i> إضافة فرع</button>
           </div>
 
           <div className="card">
@@ -64,7 +64,7 @@ export default function Branches() {
         <div className="modal">
           <div className="modal-header">
             <h3 id="modalTitle"><i className="fas fa-building"></i> إضافة فرع</h3>
-            <button className="close-btn" onClick={() => {}}>&times;</button>
+            <button className="close-btn" onClick={() => { }}>&times;</button>
           </div>
           <div className="modal-body">
             <form id="branchForm">
@@ -80,13 +80,11 @@ export default function Branches() {
             </form>
           </div>
           <div className="modal-footer">
-            <button className="btn btn-success" onClick={() => {}}><i className="fas fa-save"></i> حفظ</button>
-            <button className="btn btn-outline" onClick={() => {}}>إلغاء</button>
+            <button className="btn btn-success" onClick={() => { }}><i className="fas fa-save"></i> حفظ</button>
+            <button className="btn btn-outline" onClick={() => { }}>إلغاء</button>
           </div>
         </div>
       </div>
-
-      <button className="mobile-menu-btn"><i className="fas fa-bars"></i></button>
 
       <Script src="/js/database-api.js" strategy="beforeInteractive" />
       <Script src="/js/auth-api.js" strategy="beforeInteractive" />

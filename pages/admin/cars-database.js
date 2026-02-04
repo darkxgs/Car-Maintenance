@@ -37,10 +37,10 @@ export default function CarsDatabase() {
         <main className="main-content">
           <div className="page-header">
             <h1><i className="fas fa-database"></i> قاعدة بيانات السيارات</h1>
-            <button className="btn btn-primary" onClick={() => {}}><i className="fas fa-plus"></i> إضافة سيارة</button>
+            <button className="btn btn-primary" onClick={() => { }}><i className="fas fa-plus"></i> إضافة سيارة</button>
           </div>
 
-          <div className="card" style={{marginBottom: '1.5rem'}}>
+          <div className="card" style={{ marginBottom: '1.5rem' }}>
             <div className="card-body">
               <div className="form-row">
                 <div className="form-group">
@@ -51,8 +51,8 @@ export default function CarsDatabase() {
                   <label>الموديل</label>
                   <input type="text" id="searchModel" placeholder="بحث..." />
                 </div>
-                <div className="form-group" style={{display: 'flex', alignItems: 'flex-end'}}>
-                  <button className="btn btn-primary" onClick={() => {}}><i className="fas fa-search"></i> بحث</button>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <button className="btn btn-primary" onClick={() => { }}><i className="fas fa-search"></i> بحث</button>
                 </div>
               </div>
             </div>
@@ -83,10 +83,10 @@ export default function CarsDatabase() {
       </div>
 
       <div className="modal-overlay" id="carModal">
-        <div className="modal" style={{maxWidth: '600px'}}>
+        <div className="modal" style={{ maxWidth: '600px' }}>
           <div className="modal-header">
             <h3 id="modalTitle"><i className="fas fa-car"></i> إضافة سيارة</h3>
-            <button className="close-btn" onClick={() => {}}>&times;</button>
+            <button className="close-btn" onClick={() => { }}>&times;</button>
           </div>
           <div className="modal-body">
             <form id="carForm">
@@ -140,13 +140,11 @@ export default function CarsDatabase() {
             </form>
           </div>
           <div className="modal-footer">
-            <button className="btn btn-success" onClick={() => {}}><i className="fas fa-save"></i> حفظ</button>
-            <button className="btn btn-outline" onClick={() => {}}>إلغاء</button>
+            <button className="btn btn-success" onClick={() => { }}><i className="fas fa-save"></i> حفظ</button>
+            <button className="btn btn-outline" onClick={() => { }}>إلغاء</button>
           </div>
         </div>
       </div>
-
-      <button className="mobile-menu-btn"><i className="fas fa-bars"></i></button>
 
       <Script src="/js/database-api.js" strategy="beforeInteractive" />
       <Script src="/js/auth-api.js" strategy="beforeInteractive" />

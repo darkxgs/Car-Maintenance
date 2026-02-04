@@ -33,7 +33,7 @@ export default function Login() {
               </div>
             </div>
 
-            <div id="loginError" className="alert alert-danger" style={{display: 'none'}}>
+            <div id="loginError" className="alert alert-danger" style={{ display: 'none' }}>
               <i className="fas fa-exclamation-circle"></i>
               <span></span>
             </div>
@@ -44,7 +44,7 @@ export default function Login() {
             </button>
           </form>
 
-          <div style={{textAlign: 'center', marginTop: '1.5rem', color: 'var(--gray)', fontSize: '0.85rem'}}>
+          <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--gray)', fontSize: '0.85rem' }}>
             <p>بيانات تجريبية:</p>
             <p>المدير: admin / admin123</p>
             <p>موظف: employee1 / 123456</p>

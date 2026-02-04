@@ -34,6 +34,27 @@ export default function Operation() {
           </div>
         </aside>
 
+        {/* Mobile Menu Bar */}
+        <div className="mobile-menu-bar">
+          <div className="mobile-menu-header">
+            <i className="fas fa-car-side"></i>
+            <span>صيانة السيارات</span>
+          </div>
+          <button className="mobile-menu-toggle" id="mobileMenuToggle">
+            <i className="fas fa-bars"></i>
+          </button>
+          <div className="mobile-menu-dropdown" id="mobileMenuDropdown">
+            <a href="/dashboard"><i className="fas fa-home"></i> لوحة التحكم</a>
+            <a href="/operation" className="active"><i className="fas fa-oil-can"></i> تسجيل عملية</a>
+            <a href="/reports"><i className="fas fa-chart-bar"></i> التقارير</a>
+            <div className="mobile-menu-divider"></div>
+            <span className="mobile-menu-title">الإدارة</span>
+            <a href="/admin/users" className="admin-only"><i className="fas fa-users"></i> المستخدمين</a>
+            <a href="/admin/branches" className="admin-only"><i className="fas fa-building"></i> الفروع</a>
+            <a href="/admin/cars-database" className="admin-only"><i className="fas fa-database"></i> قاعدة البيانات</a>
+          </div>
+        </div>
+
         <main className="main-content">
           <div className="page-header">
             <h1><i className="fas fa-oil-can"></i> تسجيل عملية</h1>
@@ -89,13 +110,13 @@ export default function Operation() {
             </div>
           </div>
 
-          <div className="card tab-content" id="serviceForm" style={{display: 'none'}}>
+          <div className="card tab-content" id="serviceForm" style={{ display: 'none' }}>
             <div className="card-header">
               <h3><i className="fas fa-tools"></i> تسجيل عملية صيانة</h3>
             </div>
             <div className="card-body">
               <form id="serviceFormEl">
-                <h4 style={{marginBottom: '1rem', color: 'var(--gray)'}}>بيانات السيارة</h4>
+                <h4 style={{ marginBottom: '1rem', color: 'var(--gray)' }}>بيانات السيارة</h4>
                 <div className="form-row">
                   <div className="form-group">
                     <label>نوع السيارة</label>
@@ -121,7 +142,7 @@ export default function Operation() {
                   </div>
                 </div>
 
-                <h4 style={{margin: '1.5rem 0 1rem', color: 'var(--gray)'}}>بيانات الزيت</h4>
+                <h4 style={{ margin: '1.5rem 0 1rem', color: 'var(--gray)' }}>بيانات الزيت</h4>
                 <div className="form-row">
                   <div className="form-group">
                     <label>نوع الزيت المستخدم</label>
@@ -147,7 +168,7 @@ export default function Operation() {
                   </div>
                 </div>
 
-                <h4 style={{margin: '1.5rem 0 1rem', color: 'var(--gray)'}}>الفلاتر</h4>
+                <h4 style={{ margin: '1.5rem 0 1rem', color: 'var(--gray)' }}>الفلاتر</h4>
                 <div className="filters-group">
                   <div className="filter-item">
                     <input type="checkbox" id="oilFilter" />
@@ -174,29 +195,28 @@ export default function Operation() {
       <div className="modal-overlay" id="mismatchModal">
         <div className="modal">
           <div className="modal-header">
-            <h3><i className="fas fa-exclamation-triangle" style={{color: 'var(--warning)'}}></i> سبب الاختلاف</h3>
-            <button className="close-btn" onClick={() => {}}>&times;</button>
+            <h3><i className="fas fa-exclamation-triangle" style={{ color: 'var(--warning)' }}></i> سبب الاختلاف</h3>
+            <button className="close-btn" onClick={() => { }}>&times;</button>
           </div>
           <div className="modal-body">
             <div id="mismatchDetails"></div>
-            <div className="form-group" style={{marginTop: '1rem'}}>
+            <div className="form-group" style={{ marginTop: '1rem' }}>
               <label>يرجى توضيح سبب الاختلاف عن البيانات المقترحة:</label>
-              <textarea id="mismatchReason" rows="3" style={{width: '100%', padding: '0.75rem', border: '2px solid var(--light)', borderRadius: 'var(--radius)'}} required></textarea>
+              <textarea id="mismatchReason" rows="3" style={{ width: '100%', padding: '0.75rem', border: '2px solid var(--light)', borderRadius: 'var(--radius)' }} required></textarea>
             </div>
           </div>
           <div className="modal-footer">
-            <button className="btn btn-success" onClick={() => {}}><i className="fas fa-check"></i> تأكيد وتسجيل</button>
-            <button className="btn btn-outline" onClick={() => {}}>إلغاء</button>
+            <button className="btn btn-success" onClick={() => { }}><i className="fas fa-check"></i> تأكيد وتسجيل</button>
+            <button className="btn btn-outline" onClick={() => { }}>إلغاء</button>
           </div>
         </div>
       </div>
-
-      <button className="mobile-menu-btn"><i className="fas fa-bars"></i></button>
 
       <Script src="/js/database-api.js" strategy="beforeInteractive" />
       <Script src="/js/auth-api.js" strategy="beforeInteractive" />
       <Script src="/js/ai-supervisor.js" strategy="beforeInteractive" />
       <Script src="/js/utils.js" strategy="beforeInteractive" />
+      <Script src="/js/mobile-menu.js" strategy="afterInteractive" />
       <Script id="operation-script" strategy="afterInteractive">{`
         let pendingServiceData = null;
 

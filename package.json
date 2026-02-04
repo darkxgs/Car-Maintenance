@@ -12,9 +12,15 @@
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "bcryptjs": "^3.0.3",
+    "chart.js": "^4.4.1",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
+    "jose": "^5.2.0",
+    "jsonwebtoken": "^9.0.2",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "19.2.3",
+    "zod": "^3.22.4"
   }
 }

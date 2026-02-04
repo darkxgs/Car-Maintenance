@@ -1,9 +1,10 @@
-// ===== Authentication Manager (API-based) =====
+// ===== Authentication Manager (JWT-based) =====
 
 class AuthManager {
     constructor() {
         this.currentUser = null;
         this.SESSION_KEY = 'car_maintenance_session';
+        this.refreshTimer = null;
     }
 
     async login(username, password) {
@@ -21,10 +22,70 @@ class AuthManager {
         const session = await response.json();
         localStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
         this.currentUser = session;
+
+        // Schedule token refresh before expiry (refresh 1 minute before expiry)
+        this.scheduleTokenRefresh((session.expiresIn - 60) * 1000);
+
         return session;
     }
 
-    logout() {
+    scheduleTokenRefresh(delayMs) {
+        // Clear existing timer
+        if (this.refreshTimer) {
+            clearTimeout(this.refreshTimer);
+        }
+
+        // Schedule refresh
+        this.refreshTimer = setTimeout(async () => {
+            try {
+                await this.refreshToken();
+            } catch (error) {
+                console.error('Token refresh failed:', error);
+                this.logout();
+            }
+        }, delayMs);
+    }
+
+    async refreshToken() {
+        const response = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error('Token refresh failed');
+        }
+
+        const data = await response.json();
+
+        // Update access token in session
+        const session = this.getSession();
+        if (session) {
+            session.accessToken = data.accessToken;
+            session.expiresIn = data.expiresIn;
+            localStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+            this.currentUser = session;
+        }
+
+        // Schedule next refresh
+        this.scheduleTokenRefresh((data.expiresIn - 60) * 1000);
+    }
+
+    async logout() {
+        // Clear refresh timer
+        if (this.refreshTimer) {
+            clearTimeout(this.refreshTimer);
+        }
+
+        // Call logout endpoint to clear cookies
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST'
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+
         localStorage.removeItem(this.SESSION_KEY);
         this.currentUser = null;
         window.location.href = '/';
@@ -41,6 +102,11 @@ class AuthManager {
             return this.currentUser;
         }
         return null;
+    }
+
+    getAccessToken() {
+        const session = this.getSession();
+        return session ? session.accessToken : null;
     }
 
     isAdmin() {
@@ -81,6 +147,25 @@ class AuthManager {
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
         }
     }
+
+    // Initialize token refresh on page load
+    initializeTokenRefresh() {
+        const session = this.getSession();
+        if (session && session.expiresIn) {
+            // Calculate remaining time
+            const loginTime = new Date(session.loginTime).getTime();
+            const now = Date.now();
+            const elapsed = now - loginTime;
+            const remaining = (session.expiresIn * 1000) - elapsed;
+
+            if (remaining > 60000) { // If more than 1 minute remaining
+                this.scheduleTokenRefresh(remaining - 60000);
+            } else {
+                // Token expired or about to expire, refresh immediately
+                this.refreshToken().catch(() => this.logout());
+            }
+        }
+    }
 }
 
 const auth = new AuthManager();
@@ -91,5 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!window.location.pathname.endsWith('/') && window.location.pathname !== '/') {
         auth.updateUserUI();
+        auth.initializeTokenRefresh();
     }
 });
