@@ -37,10 +37,27 @@ export default function CarsDatabase() {
         <main className="main-content">
           <div className="page-header">
             <h1><i className="fas fa-database"></i> قاعدة بيانات السيارات</h1>
-            <button className="btn btn-primary" onClick={() => { }}><i className="fas fa-plus"></i> إضافة سيارة</button>
-            <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={() => document.getElementById('importFile').click()}><i className="fas fa-file-import"></i> استيراد (CSV)</button>
-            <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={() => exportToCSV()}><i className="fas fa-file-export"></i> تصدير (CSV)</button>
-            <input type="file" id="importFile" accept=".csv" style={{ display: 'none' }} onChange={(e) => importCars(e)} />
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary" onClick={() => { }}><i className="fas fa-plus"></i> إضافة سيارة</button>
+              <div style={{ borderLeft: '1px solid #ccc', margin: '0 0.5rem' }}></div>
+              <button className="btn btn-outline" onClick={() => downloadTemplate()} title="تحميل نموذج فارغ"><i className="fas fa-file-csv"></i> تحميل نموذج</button>
+              <button className="btn btn-info" style={{ color: 'white' }} onClick={() => document.getElementById('importFile').click()}><i className="fas fa-file-import"></i> استيراد (CSV)</button>
+              <button className="btn btn-secondary" onClick={() => exportToCSV()}><i className="fas fa-file-export"></i> تصدير (CSV)</button>
+              <input type="file" id="importFile" accept=".csv" style={{ display: 'none' }} onChange={(e) => importCars(e)} />
+            </div>
+          </div>
+
+          {/* Import Help Section */}
+          <div className="card" style={{ marginBottom: '1.5rem', background: '#f8f9fa' }}>
+            <div className="card-body" style={{ padding: '1rem' }}>
+              <h5 style={{ margin: '0 0 0.5rem 0', color: '#666', fontSize: '1rem' }}><i className="fas fa-info-circle"></i> تعليمات الاستيراد</h5>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                لاستيراد البيانات بنجاح، يرجى استخدام <strong>نموذج CSV</strong> المخصص.
+                الأعمدة المطلوبة (الإنجليزية): <code style={{ direction: 'ltr', display: 'inline-block' }}>brand, model, year_from, year_to, engine_size, oil_type, oil_viscosity, oil_quantity</code>.
+                <br />
+                تأكد من أن الأرقام (السنوات، الكمية) مكتوبة بشكل صحيح وبدون نصوص إضافية.
+              </p>
+            </div>
           </div>
 
           <div className="card" style={{ marginBottom: '1.5rem' }}>
@@ -186,6 +203,21 @@ export default function CarsDatabase() {
                 </td>
             </tr>\`).join('');
         }
+        
+        function downloadTemplate() {
+            const headers = ['brand', 'model', 'year_from', 'year_to', 'engine_size', 'oil_type', 'oil_viscosity', 'oil_quantity'];
+            const exampleRow = ['Toyota', 'Camry', '2018', '2022', '2.5L', 'Synthetic', '0W-20', '4.5'];
+            const csvContent = [headers.join(','), exampleRow.join(',')].join('\\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "car_import_template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         async function exportToCSV() {
             const cars = await db.getAll('cars');
@@ -223,8 +255,9 @@ export default function CarsDatabase() {
             reader.onload = async function(e) {
                 const text = e.target.result;
                 const rows = text.split('\\n').map(r => r.trim()).filter(r => r);
+                
                 if (rows.length < 2) {
-                    showToast('الملف فارغ أو غير صالح', 'error');
+                    showToast('الملف فارغ أو لا يحتوي على بيانات', 'error');
                     return;
                 }
 
@@ -234,27 +267,61 @@ export default function CarsDatabase() {
                 const missing = required.filter(r => !headers.includes(r));
                 
                 if (missing.length > 0) {
-                     showToast(\`ملف CSV غير صالح. الحقول الناقصة: \${missing.join(', ')}\`, 'error');
+                     showToast(\`خطأ: الأعمدة التالية مفقودة: \${missing.join(', ')}\`, 'error');
                      return;
                 }
 
                 const carsToAdd = [];
+                const errors = [];
+                
+                // Start from 1 to skip header
                 for (let i = 1; i < rows.length; i++) {
                     const values = rows[i].split(',');
-                    if (values.length !== headers.length) continue; // Skip malformed rows
+                    // Handle simple CSV splitting (doesn't handle quoted commas fully robustly but works for template)
+                    
+                    if (values.length !== headers.length) {
+                        errors.push(\`السطر \${i + 1}: عدد الأعمدة غير صحيح\`);
+                        continue;
+                    }
                     
                     const car = {};
+                    let rowHasError = false;
+                    
                     headers.forEach((h, index) => {
                         let val = values[index].trim();
                         if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
                         
                         // Parse numbers
-                        if (['year_from', 'year_to'].includes(h)) val = parseInt(val);
-                        if (['oil_quantity'].includes(h)) val = parseFloat(val);
+                        if (['year_from', 'year_to'].includes(h)) {
+                             const num = parseInt(val);
+                            if (isNaN(num)) {
+                                errors.push(\`السطر \${i + 1}: السنة غير صالحة (\${val})\`);
+                                rowHasError = true;
+                            }
+                            val = num;
+                        }
+                        if (['oil_quantity'].includes(h)) {
+                            const num = parseFloat(val);
+                            if (isNaN(num)) {
+                                errors.push(\`السطر \${i + 1}: الكمية غير صالحة (\${val})\`);
+                                rowHasError = true;
+                            }
+                            val = num;
+                        }
                         
                         car[h] = val;
                     });
-                    carsToAdd.push(car);
+                    
+                    if (!rowHasError) {
+                        carsToAdd.push(car);
+                    }
+                }
+
+                if (errors.length > 0) {
+                    // Show first 3 errors to avoid spamming
+                    const errorMsg = errors.slice(0, 3).join('<br>');
+                    showToast(\`وجدنا بعض الأخطاء:<br>\${errorMsg}\${errors.length > 3 ? '<br>...والمزيد' : ''}\`, 'warning');
+                    if (carsToAdd.length === 0) return; // Stop if nothing matches
                 }
 
                 if (carsToAdd.length === 0) {
@@ -262,6 +329,11 @@ export default function CarsDatabase() {
                     return;
                 }
 
+                if(!confirm(\`هل تريد استيراد \${carsToAdd.length} سيارة؟\\n(تم تجاهل \${errors.length} صفوف غير صالحة)\`)) {
+                    event.target.value = '';
+                    return;
+                }
+                
                 try {
                     showToast(\`جاري استيراد \${carsToAdd.length} سيارة...\`, 'info');
                     await db.add('cars', carsToAdd); // Uses our new bulk insert support
