@@ -270,12 +270,19 @@ export default function Operation() {
 
         document.getElementById('inquiryFormEl').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const result = await aiSupervisor.processInquiry({
-                brand: document.getElementById('inqBrand').value,
-                model: document.getElementById('inqModel').value,
-                year: document.getElementById('inqYear').value,
-                engineSize: document.getElementById('inqEngine').value
-            });
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalBtnContent = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-sm"></span> جاري البحث...';
+
+            try {
+                const result = await aiSupervisor.processInquiry({
+                    brand: document.getElementById('inqBrand').value,
+                    model: document.getElementById('inqModel').value,
+                    year: document.getElementById('inqYear').value,
+                    engineSize: document.getElementById('inqEngine').value
+                });
 
             const resultDiv = document.getElementById('inquiryResult');
             resultDiv.classList.add('show');
@@ -302,6 +309,12 @@ export default function Operation() {
       resultDiv.innerHTML = \`<div class="ai-header"><i class="fas fa-exclamation-triangle"></i><h4>تنبيه</h4></div><div class="ai-content">\${result.message}</div>\`;
       showToast(result.message, 'warning');
             }
+        } finally {
+            if (typeof submitBtn !== 'undefined') {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnContent;
+            }
+        }
         });
 
         document.getElementById('serviceFormEl').addEventListener('submit', async (e) => {

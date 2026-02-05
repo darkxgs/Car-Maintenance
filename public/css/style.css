@@ -2384,3 +2384,16 @@ table .badge {
     margin-bottom: 0.25rem;
     color: var(--secondary);
 }
+
+/* Button Spinner */
+.spinner-sm {
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: text-bottom;
+    margin-left: 0.5rem;
+}
