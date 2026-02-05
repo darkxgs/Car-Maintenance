@@ -64,6 +64,51 @@ class AISupervisor {
         };
     }
 
+    // Try Gemini AI analysis (with timeout and fallback)
+    async tryGeminiAI(carData, operation = 'analyze') {
+        try {
+            console.log('🤖 Trying Gemini AI...');
+
+            // Create abort controller for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            const endpoint = operation === 'analyze' ? '/api/ai/analyze' : '/api/ai/compare';
+
+            // Get auth token for API call
+            const session = auth.getSession();
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.token}`
+                },
+                body: JSON.stringify(operation === 'analyze' ? carData : { serviceData: carData.serviceData, recommended: carData.recommended }),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ Gemini AI succeeded');
+                return { success: true, data: result, source: 'ai' };
+            } else {
+                console.warn('⚠️ Gemini AI failed, using fallback');
+                return { success: false, error: result.error };
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                console.warn('⏱️ Gemini AI timeout, using fallback');
+            } else {
+                console.warn('❌ Gemini AI error:', error.message, '- using fallback');
+            }
+            return { success: false, error: error.message };
+        }
+    }
+
     // Check if service data matches recommendation
     checkMatch(serviceData, recommended) {
         const mismatches = [];
@@ -99,13 +144,30 @@ class AISupervisor {
         };
     }
 
-    // Process inquiry (Case 1)
+    // Process inquiry (Case 1) - HYBRID AI
     async processInquiry(carData) {
         const validation = this.validateInput(carData, 'inquiry');
         if (!validation.valid) return { success: false, ...validation };
 
-        const comparison = await this.compareWithDatabase(carData);
-        if (!comparison.found) return { success: false, ...comparison };
+        let recommendedData = null;
+        let dataSource = 'fallback';
+
+        // Try Gemini AI first
+        const aiResult = await this.tryGeminiAI(carData, 'analyze');
+
+        if (aiResult.success && aiResult.data.data) {
+            // Use AI recommendation
+            recommendedData = aiResult.data.data;
+            dataSource = 'gemini-ai';
+            console.log('💡 Using Gemini AI recommendation');
+        } else {
+            // Fallback to database lookup
+            console.log('🔄 Falling back to database lookup');
+            const comparison = await this.compareWithDatabase(carData);
+            if (!comparison.found) return { success: false, ...comparison };
+            recommendedData = comparison.recommended;
+            dataSource = 'database';
+        }
 
         // Record the inquiry
         const session = auth.getSession();
@@ -114,14 +176,14 @@ class AISupervisor {
             car_model: carData.model,
             car_year: parseInt(carData.year),
             engine_size: carData.engineSize,
-            oil_used: comparison.recommended.oilType,
-            oil_viscosity: comparison.recommended.oilViscosity,
-            oil_quantity: comparison.recommended.oilQuantity,
+            oil_used: recommendedData.oilType,
+            oil_viscosity: recommendedData.oilViscosity,
+            oil_quantity: recommendedData.oilQuantity,
             oil_filter: 0,
             air_filter: 0,
             cooling_filter: 0,
             is_matching: 1,
-            mismatch_reason: null,
+            mismatch_reason: recommendedData.reasoning || null,
             operation_type: 'inquiry',
             user_id: session.userId,
             branch_id: session.branchId,
@@ -131,12 +193,13 @@ class AISupervisor {
         return {
             success: true,
             type: 'inquiry',
-            message: '✅ تم تسجيل الاستعلام',
-            data: comparison.recommended
+            message: `✅ تم تسجيل الاستعلام ${dataSource === 'gemini-ai' ? '(AI)' : ''}`,
+            data: recommendedData,
+            source: dataSource
         };
     }
 
-    // Process service (Case 2)
+    // Process service (Case 2) - HYBRID AI
     async processService(serviceData, mismatchReason = null) {
         const validation = this.validateInput(serviceData, 'service');
         if (!validation.valid) return { success: false, ...validation };
@@ -145,10 +208,31 @@ class AISupervisor {
 
         let isMatching = true;
         let needsReason = false;
+        let matchResult = null;
+        let aiAnalysis = null;
 
         if (comparison.found) {
-            const matchResult = this.checkMatch(serviceData, comparison.recommended);
-            isMatching = matchResult.isMatching;
+            // Try AI comparison first
+            const aiCompareResult = await this.tryGeminiAI({
+                serviceData: serviceData,
+                recommended: comparison.recommended
+            }, 'compare');
+
+            if (aiCompareResult.success && aiCompareResult.data) {
+                // Use AI comparison
+                console.log('💡 Using Gemini AI comparison');
+                isMatching = aiCompareResult.data.isMatching;
+                matchResult = {
+                    isMatching: aiCompareResult.data.isMatching,
+                    mismatches: aiCompareResult.data.mismatches || []
+                };
+                aiAnalysis = aiCompareResult.data.analysis;
+            } else {
+                // Fallback to rule-based comparison
+                console.log('🔄 Falling back to rule-based comparison');
+                matchResult = this.checkMatch(serviceData, comparison.recommended);
+                isMatching = matchResult.isMatching;
+            }
 
             if (!isMatching && !mismatchReason) {
                 return {
@@ -156,6 +240,7 @@ class AISupervisor {
                     needsReason: true,
                     mismatches: matchResult.mismatches,
                     recommended: comparison.recommended,
+                    analysis: aiAnalysis,
                     message: '⚠️ البيانات المدخلة تختلف عن المقترح. يرجى توضيح السبب.'
                 };
             }
@@ -174,7 +259,7 @@ class AISupervisor {
             air_filter: serviceData.airFilter ? 1 : 0,
             cooling_filter: serviceData.coolingFilter ? 1 : 0,
             is_matching: isMatching ? 1 : 0,
-            mismatch_reason: mismatchReason,
+            mismatch_reason: mismatchReason || (aiAnalysis ? `AI: ${aiAnalysis}` : null),
             operation_type: 'service',
             user_id: session.userId,
             branch_id: session.branchId,
@@ -185,7 +270,7 @@ class AISupervisor {
             success: true,
             type: 'service',
             isMatching,
-            message: '✅ تم تسجيل العملية بنجاح'
+            message: `✅ تم تسجيل العملية بنجاح ${aiAnalysis ? '(AI)' : ''}`
         };
     }
 }

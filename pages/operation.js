@@ -288,81 +288,96 @@ export default function Operation() {
                         <div class="result-item"><span>نوع الزيت:</span><strong>\${result.data.oilType}</strong></div>
                         <div class="result-item"><span>اللزوجة:</span><strong>\${result.data.oilViscosity}</strong></div>
                         <div class="result-item"><span>الكمية:</span><strong>\${result.data.oilQuantity} لتر</strong></div>
-                    </div>\`;
-                showToast(result.message, 'success');
+                    </div>
+                    \${result.data.reasoning ? \`<div class="ai-reasoning">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>ملاحظة الذكاء الاصطناعي:</strong>
+                            \${result.data.reasoning}
+                        </div>
+                    </div>\` : ''}\`;
+      showToast(result.message, 'success');
             } else {
-                resultDiv.className = 'ai-response show warning';
-                resultDiv.innerHTML = \`<div class="ai-header"><i class="fas fa-exclamation-triangle"></i><h4>تنبيه</h4></div><div class="ai-content">\${result.message}</div>\`;
-                showToast(result.message, 'warning');
+        resultDiv.className = 'ai-response show warning';
+      resultDiv.innerHTML = \`<div class="ai-header"><i class="fas fa-exclamation-triangle"></i><h4>تنبيه</h4></div><div class="ai-content">\${result.message}</div>\`;
+      showToast(result.message, 'warning');
             }
         });
 
         document.getElementById('serviceFormEl').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const serviceData = {
-                brand: document.getElementById('svcBrand').value,
-                model: document.getElementById('svcModel').value,
-                year: document.getElementById('svcYear').value,
-                engineSize: document.getElementById('svcEngine').value,
-                oilUsed: document.getElementById('svcOil').value,
-                oilViscosity: document.getElementById('svcViscosity').value,
-                oilQuantity: document.getElementById('svcQuantity').value,
-                oilFilter: document.getElementById('oilFilter').checked,
-                airFilter: document.getElementById('airFilter').checked,
-                coolingFilter: document.getElementById('coolingFilter').checked
+        e.preventDefault();
+      const serviceData = {
+        brand: document.getElementById('svcBrand').value,
+      model: document.getElementById('svcModel').value,
+      year: document.getElementById('svcYear').value,
+      engineSize: document.getElementById('svcEngine').value,
+      oilUsed: document.getElementById('svcOil').value,
+      oilViscosity: document.getElementById('svcViscosity').value,
+      oilQuantity: document.getElementById('svcQuantity').value,
+      oilFilter: document.getElementById('oilFilter').checked,
+      airFilter: document.getElementById('airFilter').checked,
+      coolingFilter: document.getElementById('coolingFilter').checked
             };
 
-            const result = await aiSupervisor.processService(serviceData);
-            handleServiceResult(result, serviceData);
+      const result = await aiSupervisor.processService(serviceData);
+      handleServiceResult(result, serviceData);
         });
 
-        function handleServiceResult(result, serviceData) {
+      function handleServiceResult(result, serviceData) {
             const resultDiv = document.getElementById('serviceResult');
 
-            if (result.needsReason) {
-                pendingServiceData = serviceData;
-                showMismatchModal(result);
-                return;
+      if (result.needsReason) {
+        pendingServiceData = serviceData;
+      showMismatchModal(result);
+      return;
             }
 
-            resultDiv.classList.add('show');
-            if (result.success) {
-                resultDiv.className = 'ai-response show success';
-                resultDiv.innerHTML = \`<div class="ai-header"><i class="fas fa-check-circle"></i><h4>تم</h4></div><div class="ai-content">\${result.message}</div>\`;
-                showToast('تم تسجيل العملية بنجاح', 'success');
-                document.getElementById('serviceFormEl').reset();
+      resultDiv.classList.add('show');
+      if (result.success) {
+        resultDiv.className = 'ai-response show success';
+      resultDiv.innerHTML = \`<div class="ai-header"><i class="fas fa-check-circle"></i><h4>تم</h4></div>
+                <div class="ai-content">\${result.message}</div>
+                \${result.data && result.data.analysis ? \`<div class="ai-reasoning">
+                    <i class="fas fa-clipboard-check"></i>
+                    <div>
+                        <strong>تقييم الذكاء الاصطناعي:</strong>
+                        \${result.data.analysis}
+                    </div>
+                </div>\` : ''}\`;
+      showToast('تم تسجيل العملية بنجاح', 'success');
+      document.getElementById('serviceFormEl').reset();
             } else {
-                resultDiv.className = 'ai-response show warning';
-                resultDiv.innerHTML = \`<div class="ai-header"><i class="fas fa-exclamation-triangle"></i><h4>تنبيه</h4></div><div class="ai-content">\${result.message}</div>\`;
-                showToast(result.message, 'warning');
+        resultDiv.className = 'ai-response show warning';
+      resultDiv.innerHTML = \`<div class="ai-header"><i class="fas fa-exclamation-triangle"></i><h4>تنبيه</h4></div><div class="ai-content">\${result.message}</div>\`;
+      showToast(result.message, 'warning');
             }
         }
 
-        function showMismatchModal(result) {
+      function showMismatchModal(result) {
             const details = result.mismatches.map(m => \`<p><strong>\${m.field}:</strong> المقترح: \${m.expected} | المدخل: \${m.actual}</p>\`).join('');
-            document.getElementById('mismatchDetails').innerHTML = \`<div class="alert alert-warning"><i class="fas fa-info-circle"></i> البيانات المدخلة تختلف عن المقترحة:</div>\${details}\`;
-            document.getElementById('mismatchModal').classList.add('show');
+      document.getElementById('mismatchDetails').innerHTML = \`<div class="alert alert-warning"><i class="fas fa-info-circle"></i> البيانات المدخلة تختلف عن المقترحة:</div>\${details}\`;
+      document.getElementById('mismatchModal').classList.add('show');
         }
 
-        function closeMismatchModal() {
-            document.getElementById('mismatchModal').classList.remove('show');
-            document.getElementById('mismatchReason').value = '';
-            pendingServiceData = null;
+      function closeMismatchModal() {
+        document.getElementById('mismatchModal').classList.remove('show');
+      document.getElementById('mismatchReason').value = '';
+      pendingServiceData = null;
         }
 
-        async function submitWithReason() {
+      async function submitWithReason() {
             const reason = document.getElementById('mismatchReason').value.trim();
-            if (!reason) { showToast('يرجى إدخال سبب الاختلاف', 'warning'); return; }
+      if (!reason) {showToast('يرجى إدخال سبب الاختلاف', 'warning'); return; }
 
-            const result = await aiSupervisor.processService(pendingServiceData, reason);
-            closeMismatchModal();
-            handleServiceResult(result, pendingServiceData);
+      const result = await aiSupervisor.processService(pendingServiceData, reason);
+      closeMismatchModal();
+      handleServiceResult(result, pendingServiceData);
         }
 
-        document.querySelector('.modal-overlay .close-btn').addEventListener('click', closeMismatchModal);
+      document.querySelector('.modal-overlay .close-btn').addEventListener('click', closeMismatchModal);
         document.querySelectorAll('.modal-footer .btn-outline').forEach(btn => btn.addEventListener('click', closeMismatchModal));
         document.querySelectorAll('.modal-footer .btn-success').forEach(btn => btn.addEventListener('click', submitWithReason));
-      `}</Script>
+      `}</Script >
     </>
   )
 }

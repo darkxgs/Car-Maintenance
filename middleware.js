@@ -6,7 +6,7 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 // List of paths that don't require authentication
-const PUBLIC_PATHS = ['/', '/api/auth/login'];
+const PUBLIC_PATHS = ['/', '/api/auth/login', '/api/ai/analyze', '/api/ai/compare'];
 
 // Paths that require admin role
 const ADMIN_ONLY_PATHS = [
