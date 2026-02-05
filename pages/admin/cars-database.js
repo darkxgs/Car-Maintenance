@@ -38,25 +38,10 @@ export default function CarsDatabase() {
           <div className="page-header">
             <h1><i className="fas fa-database"></i> قاعدة بيانات السيارات</h1>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" onClick={() => { }}><i className="fas fa-plus"></i> إضافة سيارة</button>
-              <div style={{ borderLeft: '1px solid #ccc', margin: '0 0.5rem' }}></div>
-              <button className="btn btn-outline" onClick={() => downloadTemplate()} title="تحميل نموذج فارغ"><i className="fas fa-file-csv"></i> تحميل نموذج</button>
-              <button className="btn btn-info" style={{ color: 'white' }} onClick={() => document.getElementById('importFile').click()}><i className="fas fa-file-import"></i> استيراد (CSV)</button>
+              <button className="btn btn-primary" onClick={() => window.showAddModal()}><i className="fas fa-plus"></i> إضافة سيارة</button>
+              <div style={{ borderLeft: '1px solid #ccc', margin: '0 0.5rem', display: 'none' }} className="desktop-separator"></div>
+              <button className="btn" style={{ backgroundColor: '#6f42c1', color: 'white', border: 'none' }} onClick={() => window.showImportModal()}><i className="fas fa-file-import"></i> استيراد (CSV)</button>
               <button className="btn btn-secondary" onClick={() => exportToCSV()}><i className="fas fa-file-export"></i> تصدير (CSV)</button>
-              <input type="file" id="importFile" accept=".csv" style={{ display: 'none' }} onChange={(e) => importCars(e)} />
-            </div>
-          </div>
-
-          {/* Import Help Section */}
-          <div className="card" style={{ marginBottom: '1.5rem', background: '#f8f9fa' }}>
-            <div className="card-body" style={{ padding: '1rem' }}>
-              <h5 style={{ margin: '0 0 0.5rem 0', color: '#666', fontSize: '1rem' }}><i className="fas fa-info-circle"></i> تعليمات الاستيراد</h5>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                لاستيراد البيانات بنجاح، يرجى استخدام <strong>نموذج CSV</strong> المخصص.
-                الأعمدة المطلوبة (الإنجليزية): <code style={{ direction: 'ltr', display: 'inline-block' }}>brand, model, year_from, year_to, engine_size, oil_type, oil_viscosity, oil_quantity</code>.
-                <br />
-                تأكد من أن الأرقام (السنوات، الكمية) مكتوبة بشكل صحيح وبدون نصوص إضافية.
-              </p>
             </div>
           </div>
 
@@ -106,7 +91,7 @@ export default function CarsDatabase() {
         <div className="modal" style={{ maxWidth: '600px' }}>
           <div className="modal-header">
             <h3 id="modalTitle"><i className="fas fa-car"></i> إضافة سيارة</h3>
-            <button className="close-btn" onClick={() => { }}>&times;</button>
+            <button className="close-btn" onClick={() => closeModal('carModal')}>&times;</button>
           </div>
           <div className="modal-body">
             <form id="carForm">
@@ -162,8 +147,41 @@ export default function CarsDatabase() {
             </form>
           </div>
           <div className="modal-footer">
-            <button className="btn btn-success" onClick={() => { }}><i className="fas fa-save"></i> حفظ</button>
-            <button className="btn btn-outline" onClick={() => { }}>إلغاء</button>
+            <button className="btn btn-success" onClick={() => saveCar()}><i className="fas fa-save"></i> حفظ</button>
+            <button className="btn btn-outline" onClick={() => closeModal('carModal')}>إلغاء</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Import Modal */}
+      <div className="modal-overlay" id="importModal">
+        <div className="modal" style={{ maxWidth: '500px' }}>
+          <div className="modal-header">
+            <h3><i className="fas fa-file-import"></i> استيراد سيارات (CSV)</h3>
+            <button className="close-btn" onClick={() => closeModal('importModal')}>&times;</button>
+          </div>
+          <div className="modal-body">
+            <div className="alert alert-info" style={{ background: '#e3f2fd', color: '#0d47a1', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>
+              <i className="fas fa-info-circle"></i> <strong>تعليمات:</strong><br />
+              يرجى تحميل النموذج أولاً وتعبئة البيانات ثم إعادة رفعه.<br />
+              الأعمدة: <code style={{ fontFamily: 'monospace' }}>brand, model, year_from, ...</code>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button className="btn btn-outline" onClick={() => downloadTemplate()} style={{ justifyContent: 'center', borderColor: '#28a745', color: '#28a745' }}>
+                <i className="fas fa-download"></i> 1. تحميل النموذج المسبق
+              </button>
+
+              <div style={{ borderTop: '1px solid #eee', margin: '0.5rem 0' }}></div>
+
+              <label className="btn btn-primary" style={{ justifyContent: 'center', cursor: 'pointer', background: '#6f42c1', border: 'none' }}>
+                <i className="fas fa-upload"></i> 2. اختيار ملف ورفعه
+                <input type="file" id="importFile" accept=".csv" style={{ display: 'none' }} onChange={(e) => importCars(e)} />
+              </label>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button className="btn btn-outline" onClick={() => closeModal('importModal')}>إغلاق</button>
           </div>
         </div>
       </div>
@@ -335,16 +353,18 @@ export default function CarsDatabase() {
                 }
                 
                 try {
-                    showToast(\`جاري استيراد \${carsToAdd.length} سيارة...\`, 'info');
-                    await db.add('cars', carsToAdd); // Uses our new bulk insert support
+                    showToast(\`جاري استيراد \${carsToAdd.length} سيارة... هذا قد يستغرق لحظات\`, 'info');
+                    // Hide the Import modal, but keep working
+                    document.getElementById('importModal').classList.remove('show');
+                    
+                    await db.add('cars', carsToAdd);
                     showToast(\`تم استيراد \${carsToAdd.length} سيارة بنجاح\`, 'success');
                     await loadCars();
                 } catch (err) {
                     console.error(err);
-                    showToast('حدث خطأ أثناء الاستيراد', 'error');
+                    showToast('حدث خطأ أثناء الاستيراد. تأكد من صحة البيانات.', 'error');
                 }
                 
-                // Reset file input
                 event.target.value = '';
             };
             reader.readAsText(file);
@@ -355,6 +375,15 @@ export default function CarsDatabase() {
             document.getElementById('carForm').reset();
             document.getElementById('carId').value = '';
             document.getElementById('carModal').classList.add('show');
+        }
+        
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('show');
+        }
+
+        function closeModal(id) {
+             const modalId = id && typeof id === 'string' ? id : 'carModal';
+             document.getElementById(modalId).classList.remove('show');
         }
 
         async function editCar(id) {
@@ -371,8 +400,6 @@ export default function CarsDatabase() {
             document.getElementById('carOilQty').value = car.oil_quantity;
             document.getElementById('carModal').classList.add('show');
         }
-
-        function closeModal() { document.getElementById('carModal').classList.remove('show'); }
 
         async function saveCar() {
             const id = document.getElementById('carId').value;
@@ -395,7 +422,7 @@ export default function CarsDatabase() {
                 await db.add('cars', carData);
                 showToast('تم إضافة السيارة', 'success');
             }
-            closeModal();
+            closeModal('carModal');
             await loadCars();
         }
 
@@ -414,17 +441,27 @@ export default function CarsDatabase() {
             const searchBtn = document.querySelector('.card .btn-primary');
             if (searchBtn) searchBtn.addEventListener('click', loadCars);
             
-            const closeBtn = document.querySelector('.modal-overlay .close-btn');
-            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            // Note: close buttons are now inline onclick usually, but let's keep this safe
+            document.querySelectorAll('.modal-overlay .close-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                 const modal = e.target.closest('.modal-overlay');
+                 if(modal) modal.classList.remove('show');
+            }));
             
-            document.querySelectorAll('.modal-footer .btn-outline').forEach(btn => btn.addEventListener('click', closeModal));
-            document.querySelectorAll('.modal-footer .btn-success').forEach(btn => btn.addEventListener('click', saveCar));
+            document.querySelectorAll('.modal-footer .btn-outline').forEach(btn => btn.addEventListener('click', (e) => {
+                 const modal = e.target.closest('.modal-overlay');
+                 if(modal) modal.classList.remove('show');
+            }));
             
             // Expose vars for inline onclicks (legacy vibe but works for this)
             window.editCar = editCar;
             window.deleteCar = deleteCar;
             window.exportToCSV = exportToCSV;
             window.importCars = importCars;
+            window.showAddModal = showAddModal;
+            window.showImportModal = showImportModal;
+            window.closeModal = closeModal;
+            window.saveCar = saveCar;
+            window.downloadTemplate = downloadTemplate;
         }
       `}</Script>
     </>

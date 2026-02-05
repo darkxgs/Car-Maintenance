@@ -22,83 +22,81 @@ export default async function handler(req, res) {
             isMatching
         } = req.query;
 
-        // Parse and validate parameters
+        console.log('Operations API Request:', { page, limit, search, branchId, startDate, endDate, isMatching });
+
         const currentPage = Math.max(parseInt(page), 1);
         const pageLimit = Math.min(Math.max(parseInt(limit), 10), 100);
         const offset = (currentPage - 1) * pageLimit;
 
-        // Valid sort columns
-        const validSortColumns = [
-            'created_at', 'car_brand', 'car_model', 'car_year',
-            'oil_used', 'oil_viscosity', 'oil_quantity', 'is_matching'
-        ];
-        const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
-        const order = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-
-        // Build WHERE clause conditions
+        // Build filtering conditions dynamically
         const conditions = [];
-        const params = [];
 
         if (branchId) {
-            conditions.push(`branch_id = $${params.length + 1}`);
-            params.push(parseInt(branchId));
+            conditions.push(sql`branch_id = ${parseInt(branchId)}`);
         }
 
         if (startDate) {
-            conditions.push(`DATE(created_at) >= $${params.length + 1}`);
-            params.push(startDate);
+            conditions.push(sql`DATE(created_at) >= ${startDate}`);
         }
 
         if (endDate) {
-            conditions.push(`DATE(created_at) <= $${params.length + 1}`);
-            params.push(endDate);
+            conditions.push(sql`DATE(created_at) <= ${endDate}`);
         }
 
         if (isMatching !== undefined && isMatching !== null && isMatching !== '') {
-            conditions.push(`is_matching = $${params.length + 1}`);
-            params.push(parseInt(isMatching));
+            conditions.push(sql`is_matching = ${parseInt(isMatching)}`);
         }
 
-        // Full-text search across multiple columns
         if (search && search.trim()) {
             const searchTerm = `%${search.trim()}%`;
-            conditions.push(`(
-                car_brand ILIKE $${params.length + 1} OR
-                car_model ILIKE $${params.length + 1} OR
-                oil_used ILIKE $${params.length + 1} OR
-                oil_viscosity ILIKE $${params.length + 1} OR
-                engine_size ILIKE $${params.length + 1} OR
-                CAST(car_year AS TEXT) LIKE $${params.length + 1}
+            conditions.push(sql`(
+                car_brand ILIKE ${searchTerm} OR
+                car_model ILIKE ${searchTerm} OR
+                oil_used ILIKE ${searchTerm} OR
+                oil_viscosity ILIKE ${searchTerm} OR
+                engine_size ILIKE ${searchTerm} OR
+                CAST(car_year AS TEXT) LIKE ${searchTerm}
             )`);
-            params.push(searchTerm);
         }
 
-        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+        // Combine conditions
+        const whereClause = conditions.length > 0
+            ? conditions.reduce((acc, curr, i) => i === 0 ? sql`WHERE ${curr}` : sql`${acc} AND ${curr}`, sql``)
+            : sql``;
+
+        // Safe sort column mapping
+        let sortColumnFragment;
+        switch (sortBy) {
+            case 'car_brand': sortColumnFragment = sql`car_brand`; break;
+            case 'car_model': sortColumnFragment = sql`car_model`; break;
+            case 'car_year': sortColumnFragment = sql`car_year`; break;
+            case 'oil_used': sortColumnFragment = sql`oil_used`; break;
+            case 'oil_viscosity': sortColumnFragment = sql`oil_viscosity`; break;
+            case 'oil_quantity': sortColumnFragment = sql`oil_quantity`; break;
+            case 'is_matching': sortColumnFragment = sql`is_matching`; break;
+            default: sortColumnFragment = sql`created_at`;
+        }
+
+        const sortOrderFragment = sortOrder.toLowerCase() === 'asc' ? sql`ASC` : sql`DESC`;
 
         // Get total count
-        const countQuery = `
+        const countResult = await sql`
             SELECT COUNT(*) as total
             FROM operations
             ${whereClause}
         `;
-
-        const countResult = await sql.unsafe(countQuery, params);
         const total = parseInt(countResult[0].total);
+        const totalPages = Math.ceil(total / pageLimit);
 
         // Get paginated data
-        const dataQuery = `
+        const operations = await sql`
             SELECT *
             FROM operations
             ${whereClause}
-            ORDER BY ${sortColumn} ${order}
-            LIMIT $${params.length + 1}
-            OFFSET $${params.length + 2}
+            ORDER BY ${sortColumnFragment} ${sortOrderFragment}
+            LIMIT ${pageLimit}
+            OFFSET ${offset}
         `;
-
-        const operations = await sql.unsafe(dataQuery, [...params, pageLimit, offset]);
-
-        // Calculate pagination metadata
-        const totalPages = Math.ceil(total / pageLimit);
 
         return res.status(200).json({
             data: operations,
@@ -116,8 +114,8 @@ export default async function handler(req, res) {
                 startDate: startDate || null,
                 endDate: endDate || null,
                 isMatching: isMatching !== undefined ? parseInt(isMatching) : null,
-                sortBy: sortColumn,
-                sortOrder: order.toLowerCase()
+                sortBy: sortBy,
+                sortOrder: sortOrder.toLowerCase()
             }
         });
 

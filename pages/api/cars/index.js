@@ -9,20 +9,23 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       if (Array.isArray(req.body)) {
-        // Bulk insert
-        const values = req.body;
-        // Construct values for bulk insert or loop. 
-        // Postgres.js can insert array of objects directly usually, let's try that or loop.
-        // For safety and valid SQL, we can loop or use a helper. 
-        // sql`INSERT INTO cars ${sql(values, 'brand', 'model' ...)}` is the neon/postgres.js way.
 
+
+
+        // Neon driver doesn't support the sql(values) helper in the same way.
+        // We'll use Promise.all for parallel insertion which is fast enough for this scale.
         try {
-          const result = await sql`
-                INSERT INTO cars ${sql(values, 'brand', 'model', 'year_from', 'year_to', 'engine_size', 'oil_type', 'oil_viscosity', 'oil_quantity')}
+          const promises = values.map(car => sql`
+                INSERT INTO cars (brand, model, year_from, year_to, engine_size, oil_type, oil_viscosity, oil_quantity)
+                VALUES (${car.brand}, ${car.model}, ${car.year_from}, ${car.year_to}, ${car.engine_size}, ${car.oil_type}, ${car.oil_viscosity}, ${car.oil_quantity})
                 RETURNING *
-            `;
-          return res.status(201).json(result);
+            `);
+
+          const results = await Promise.all(promises);
+          // Return array of results
+          return res.status(201).json(results.map(r => r[0]));
         } catch (err) {
+          console.error('Bulk insert error:', err);
           throw new Error('Bulk insert failed: ' + err.message);
         }
       } else {

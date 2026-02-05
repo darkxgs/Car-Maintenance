@@ -84,9 +84,9 @@ export default function Reports() {
               </div>
             </div>
             <div className="right">
-              <select id="itemsPerPage" className="items-per-page">
+              <select id="itemsPerPage" className="items-per-page" defaultValue="25">
                 <option value="10">10 في الصفحة</option>
-                <option value="25" selected>25 في الصفحة</option>
+                <option value="25">25 في الصفحة</option>
                 <option value="50">50 في الصفحة</option>
                 <option value="100">100 في الصفحة</option>
               </select>
@@ -266,7 +266,9 @@ export default function Reports() {
                 container.classList.add('table-loading');
 
                 // Get paginated operations
+                console.log('Fetching operations with filters:', filterManager.getCleanFilters());
                 const response = await db.getOperationsPaginated(filterManager.getCleanFilters());
+                console.log('Operations API Response:', response);
                 
                 // Update URL
                 filterManager.syncToURL();
