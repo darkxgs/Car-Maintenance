@@ -38,6 +38,9 @@ export default function CarsDatabase() {
           <div className="page-header">
             <h1><i className="fas fa-database"></i> قاعدة بيانات السيارات</h1>
             <button className="btn btn-primary" onClick={() => { }}><i className="fas fa-plus"></i> إضافة سيارة</button>
+            <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={() => document.getElementById('importFile').click()}><i className="fas fa-file-import"></i> استيراد (CSV)</button>
+            <button className="btn btn-secondary" style={{ marginRight: '0.5rem' }} onClick={() => exportToCSV()}><i className="fas fa-file-export"></i> تصدير (CSV)</button>
+            <input type="file" id="importFile" accept=".csv" style={{ display: 'none' }} onChange={(e) => importCars(e)} />
           </div>
 
           <div className="card" style={{ marginBottom: '1.5rem' }}>
@@ -130,6 +133,8 @@ export default function CarsDatabase() {
                     <option value="5W-40">5W-40</option>
                     <option value="10W-30">10W-30</option>
                     <option value="10W-40">10W-40</option>
+                    <option value="15W-40">15W-40</option>
+                    <option value="20W-50">20W-50</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -180,6 +185,97 @@ export default function CarsDatabase() {
                     <button class="btn btn-danger" onclick="deleteCar(\${c.id})" style="padding: 0.5rem;"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>\`).join('');
+        }
+
+        async function exportToCSV() {
+            const cars = await db.getAll('cars');
+            if (cars.length === 0) {
+                showToast('لا توجد بيانات للتصدير', 'warning');
+                return;
+            }
+
+            // Define headers matching DB columns for easier import mapping
+            const headers = ['brand', 'model', 'year_from', 'year_to', 'engine_size', 'oil_type', 'oil_viscosity', 'oil_quantity'];
+            const csvContent = [
+                headers.join(','), // Header row
+                ...cars.map(c => headers.map(h => {
+                    const val = c[h] || '';
+                    // Escape commas in strings
+                    return typeof val === 'string' && val.includes(',') ? \`"\${val}"\` : val;
+                }).join(','))
+            ].join('\\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "cars_database.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function importCars(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const text = e.target.result;
+                const rows = text.split('\\n').map(r => r.trim()).filter(r => r);
+                if (rows.length < 2) {
+                    showToast('الملف فارغ أو غير صالح', 'error');
+                    return;
+                }
+
+                const headers = rows[0].split(',').map(h => h.trim());
+                // Basic validation of headers
+                const required = ['brand', 'model', 'year_from', 'year_to', 'engine_size', 'oil_type', 'oil_viscosity', 'oil_quantity'];
+                const missing = required.filter(r => !headers.includes(r));
+                
+                if (missing.length > 0) {
+                     showToast(\`ملف CSV غير صالح. الحقول الناقصة: \${missing.join(', ')}\`, 'error');
+                     return;
+                }
+
+                const carsToAdd = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const values = rows[i].split(',');
+                    if (values.length !== headers.length) continue; // Skip malformed rows
+                    
+                    const car = {};
+                    headers.forEach((h, index) => {
+                        let val = values[index].trim();
+                        if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+                        
+                        // Parse numbers
+                        if (['year_from', 'year_to'].includes(h)) val = parseInt(val);
+                        if (['oil_quantity'].includes(h)) val = parseFloat(val);
+                        
+                        car[h] = val;
+                    });
+                    carsToAdd.push(car);
+                }
+
+                if (carsToAdd.length === 0) {
+                    showToast('لم يتم العثور على بيانات صالحة للاستيراد', 'warning');
+                    return;
+                }
+
+                try {
+                    showToast(\`جاري استيراد \${carsToAdd.length} سيارة...\`, 'info');
+                    await db.add('cars', carsToAdd); // Uses our new bulk insert support
+                    showToast(\`تم استيراد \${carsToAdd.length} سيارة بنجاح\`, 'success');
+                    await loadCars();
+                } catch (err) {
+                    console.error(err);
+                    showToast('حدث خطأ أثناء الاستيراد', 'error');
+                }
+                
+                // Reset file input
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
 
         function showAddModal() {
@@ -238,11 +334,26 @@ export default function CarsDatabase() {
             await loadCars();
         }
 
-        document.querySelector('.page-header .btn-primary').addEventListener('click', showAddModal);
-        document.querySelector('.card .btn-primary').addEventListener('click', loadCars);
-        document.querySelector('.modal-overlay .close-btn').addEventListener('click', closeModal);
-        document.querySelectorAll('.modal-footer .btn-outline').forEach(btn => btn.addEventListener('click', closeModal));
-        document.querySelectorAll('.modal-footer .btn-success').forEach(btn => btn.addEventListener('click', saveCar));
+        // Attach event listeners safely
+        if (typeof document !== 'undefined') {
+            const addBtn = document.querySelector('.page-header .btn-primary');
+            if (addBtn) addBtn.addEventListener('click', showAddModal);
+            
+            const searchBtn = document.querySelector('.card .btn-primary');
+            if (searchBtn) searchBtn.addEventListener('click', loadCars);
+            
+            const closeBtn = document.querySelector('.modal-overlay .close-btn');
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            
+            document.querySelectorAll('.modal-footer .btn-outline').forEach(btn => btn.addEventListener('click', closeModal));
+            document.querySelectorAll('.modal-footer .btn-success').forEach(btn => btn.addEventListener('click', saveCar));
+            
+            // Expose vars for inline onclicks (legacy vibe but works for this)
+            window.editCar = editCar;
+            window.deleteCar = deleteCar;
+            window.exportToCSV = exportToCSV;
+            window.importCars = importCars;
+        }
       `}</Script>
     </>
   )
