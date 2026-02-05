@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
         // Query database for valid options
         const dbOptions = await sql`
-            SELECT id, oil_type, viscosity, quantity, year_from, year_to 
+            SELECT id, oil_type, oil_viscosity as viscosity, oil_quantity as quantity, year_from, year_to 
             FROM cars 
             WHERE LOWER(brand) = LOWER(${brand}) 
             AND LOWER(model) = LOWER(${model}) 
