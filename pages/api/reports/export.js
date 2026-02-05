@@ -22,59 +22,63 @@ export default async function handler(req, res) {
             isMatching
         } = req.query;
 
-        // Build WHERE clause (reuse logic from operations API)
+        // Build filtering conditions dynamically
         const conditions = [];
-        const params = [];
 
         if (branchId) {
-            conditions.push(`o.branch_id = $${params.length + 1}`);
-            params.push(parseInt(branchId));
+            conditions.push(sql`o.branch_id = ${parseInt(branchId)}`);
         }
 
         if (startDate) {
-            conditions.push(`DATE(o.created_at) >= $${params.length + 1}`);
-            params.push(startDate);
+            conditions.push(sql`DATE(o.created_at) >= ${startDate}`);
         }
 
         if (endDate) {
-            conditions.push(`DATE(o.created_at) <= $${params.length + 1}`);
-            params.push(endDate);
+            conditions.push(sql`DATE(o.created_at) <= ${endDate}`);
         }
 
         if (isMatching !== undefined && isMatching !== null && isMatching !== '') {
-            conditions.push(`o.is_matching = $${params.length + 1}`);
-            params.push(parseInt(isMatching));
+            conditions.push(sql`o.is_matching = ${parseInt(isMatching)}`);
         }
 
         if (search && search.trim()) {
             const searchTerm = `%${search.trim()}%`;
-            conditions.push(`(
-                o.car_brand ILIKE $${params.length + 1} OR
-                o.car_model ILIKE $${params.length + 1} OR
-                o.oil_used ILIKE $${params.length + 1} OR
-                o.oil_viscosity ILIKE $${params.length + 1} OR
-                o.engine_size ILIKE $${params.length + 1} OR
-                CAST(o.car_year AS TEXT) LIKE $${params.length + 1}
+            conditions.push(sql`(
+                o.car_brand ILIKE ${searchTerm} OR
+                o.car_model ILIKE ${searchTerm} OR
+                o.oil_used ILIKE ${searchTerm} OR
+                o.oil_viscosity ILIKE ${searchTerm} OR
+                o.engine_size ILIKE ${searchTerm} OR
+                CAST(o.car_year AS TEXT) LIKE ${searchTerm}
             )`);
-            params.push(searchTerm);
         }
 
-        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-        const orderColumn = ['created_at', 'car_brand', 'car_model', 'car_year'].includes(sortBy) ? sortBy : 'created_at';
-        const orderDirection = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+        // Combine conditions
+        const whereClause = conditions.length > 0
+            ? conditions.reduce((acc, curr, i) => i === 0 ? sql`WHERE ${curr}` : sql`${acc} AND ${curr}`, sql``)
+            : sql``;
+
+        // Safe sort column mapping
+        let sortColumnFragment;
+        switch (sortBy) {
+            case 'car_brand': sortColumnFragment = sql`o.car_brand`; break;
+            case 'car_model': sortColumnFragment = sql`o.car_model`; break;
+            case 'car_year': sortColumnFragment = sql`o.car_year`; break;
+            default: sortColumnFragment = sql`o.created_at`;
+        }
+
+        const sortOrderFragment = sortOrder.toLowerCase() === 'asc' ? sql`ASC` : sql`DESC`;
 
         // Fetch data with branch names
-        const query = `
+        const operations = await sql`
             SELECT 
                 o.*,
                 b.name as branch_name
             FROM operations o
             LEFT JOIN branches b ON o.branch_id = b.id
             ${whereClause}
-            ORDER BY o.${orderColumn} ${orderDirection}
+            ORDER BY ${sortColumnFragment} ${sortOrderFragment}
         `;
-
-        const operations = await sql.unsafe(query, params);
 
         if (format === 'csv') {
             const csvContent = generateCSV(operations);

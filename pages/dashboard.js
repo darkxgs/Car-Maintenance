@@ -256,17 +256,25 @@ export default function Dashboard() {
 
         async function loadRecentOperations() {
             try {
-                const operations = await db.getAll('operations');
+                // Use paginated API to get latest 10 operations directly sorted by DB
+                const response = await db.getOperationsPaginated({ 
+                    limit: 10, 
+                    sortBy: 'created_at', 
+                    sortOrder: 'desc' 
+                });
+                
+                const recent = response.data || [];
                 const tbody = document.querySelector('#recentOperations tbody');
                 const emptyState = document.getElementById('emptyState');
 
-                if (operations.length === 0) {
+                if (recent.length === 0) {
                     document.querySelector('#recentOperations').style.display = 'none';
                     emptyState.style.display = 'block';
                     return;
                 }
 
-                const recent = operations.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
+                document.querySelector('#recentOperations').style.display = 'table';
+                emptyState.style.display = 'none';
 
                 tbody.innerHTML = recent.map(op => \`
                     <tr>

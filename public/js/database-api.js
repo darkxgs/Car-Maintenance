@@ -134,6 +134,10 @@ class DatabaseManager {
     }
 
     async count(storeName) {
+        if (storeName === 'operations') {
+            const response = await this.getOperationsPaginated({ limit: 1 });
+            return response.pagination.total;
+        }
         const all = await this.getAll(storeName);
         return all.length;
     }

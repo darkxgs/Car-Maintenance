@@ -396,7 +396,7 @@ export default function Reports() {
             loadOperations();
         }
 
-        function exportData(format) {
+        async function exportData(format) {
             const filters = filterManager.getCleanFilters();
             const params = new URLSearchParams();
             
@@ -408,8 +408,41 @@ export default function Reports() {
             
             params.append('format', format);
             
-            // Trigger download
-            window.location.href = '/api/reports/export?' + params.toString();
+            try {
+                // Use toast to show progress
+                const toastId = showToast('جاري تحضير الملف...', 'info');
+                
+                // Fetch with auth headers
+                const response = await fetch('/api/reports/export?' + params.toString(), {
+                    headers: db.getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('فشل تصدير البيانات');
+                }
+
+                // Create blob and download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                // Set filename based on format
+                a.download = \`reports_export_\${new Date().toISOString().slice(0, 10)}.\${format === 'xlsx' ? 'xlsx' : 'csv'}\`;
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Success message (remove loading toast if possible, or just show success)
+        showToast('تم تحميل الملف بنجاح', 'success');
+                
+            } catch (error) {
+          console.error('Export failed:', error);
+        showToast('حدث خطأ أثناء التصدير', 'error');
+            }
         }
 
         document.getElementById('exportExcelBtn').addEventListener('click', () => exportData('xlsx'));
