@@ -1,13 +1,21 @@
 import sql from '../../lib/db';
 
 /**
- * GET /api/operations
- * Get all operations with optional filtering, sorting, and pagination
+ * /api/operations
+ * GET: Get all operations with optional filtering, sorting, and pagination
+ * POST: Create a new operation
  */
 export default async function handler(req, res) {
-    if (req.method !== 'GET') {
+    if (req.method === 'GET') {
+        return handleGet(req, res);
+    } else if (req.method === 'POST') {
+        return handlePost(req, res);
+    } else {
         return res.status(405).json({ error: 'Method not allowed' });
     }
+}
+
+async function handleGet(req, res) {
 
     try {
         const {
@@ -122,5 +130,61 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error('Error fetching operations:', error);
         return res.status(500).json({ error: 'Failed to fetch operations' });
+    }
+}
+
+async function handlePost(req, res) {
+    try {
+        console.log('POST /api/operations - Request body:', req.body);
+
+        const {
+            car_brand, car_model, car_year, engine_size,
+            oil_used, oil_viscosity, oil_quantity,
+            oil_filter, air_filter, cooling_filter,
+            is_matching, mismatch_reason, operation_type,
+            user_id, branch_id
+        } = req.body;
+
+        console.log('Attempting to insert operation with data:', {
+            car_brand, car_model, car_year, engine_size,
+            oil_used, oil_viscosity, oil_quantity,
+            oil_filter, air_filter, cooling_filter,
+            is_matching, mismatch_reason, operation_type,
+            user_id, branch_id
+        });
+
+        const result = await sql`
+            INSERT INTO operations (
+                car_brand, car_model, car_year, engine_size,
+                oil_used, oil_viscosity, oil_quantity,
+                oil_filter, air_filter, cooling_filter,
+                is_matching, mismatch_reason, operation_type,
+                user_id, branch_id, created_at
+            )
+            VALUES (
+                ${car_brand}, ${car_model}, ${car_year}, ${engine_size},
+                ${oil_used}, ${oil_viscosity}, ${oil_quantity},
+                ${oil_filter || 0}, ${air_filter || 0}, ${cooling_filter || 0},
+                ${is_matching}, ${mismatch_reason || null}, ${operation_type},
+                ${user_id}, ${branch_id}, NOW()
+            )
+            RETURNING *
+        `;
+
+        console.log('Operation created successfully:', result[0]);
+        return res.status(201).json(result[0]);
+    } catch (error) {
+        console.error('Error creating operation:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Error details:', {
+            message: error.message,
+            code: error.code,
+            detail: error.detail,
+            constraint: error.constraint
+        });
+        return res.status(500).json({
+            error: 'Failed to create operation',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 }

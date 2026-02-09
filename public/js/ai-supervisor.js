@@ -64,14 +64,14 @@ class AISupervisor {
         };
     }
 
-    // Try Gemini AI analysis (with timeout and fallback)
-    async tryGeminiAI(carData, operation = 'analyze') {
+    // Try OpenRouter AI analysis (with timeout and fallback)
+    async tryOpenRouterAI(carData, operation = 'analyze') {
         try {
-            console.log('🤖 Trying Gemini AI...');
+            console.log('🤖 Trying OpenRouter AI...');
 
             // Create abort controller for timeout
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
             const endpoint = operation === 'analyze' ? '/api/ai/analyze' : '/api/ai/compare';
 
@@ -93,17 +93,17 @@ class AISupervisor {
             const result = await response.json();
 
             if (result.success) {
-                console.log('✅ Gemini AI succeeded');
+                console.log('✅ OpenRouter AI succeeded');
                 return { success: true, data: result, source: 'ai' };
             } else {
-                console.warn('⚠️ Gemini AI failed, using fallback');
+                console.warn('⚠️ OpenRouter AI failed, using fallback');
                 return { success: false, error: result.error };
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.warn('⏱️ Gemini AI timeout, using fallback');
+                console.warn('⏱️ OpenRouter AI timeout, using fallback');
             } else {
-                console.warn('❌ Gemini AI error:', error.message, '- using fallback');
+                console.warn('❌ OpenRouter AI error:', error.message, '- using fallback');
             }
             return { success: false, error: error.message };
         }
@@ -152,14 +152,14 @@ class AISupervisor {
         let recommendedData = null;
         let dataSource = 'fallback';
 
-        // Try Gemini AI first
-        const aiResult = await this.tryGeminiAI(carData, 'analyze');
+        // Try OpenRouter AI first
+        const aiResult = await this.tryOpenRouterAI(carData, 'analyze');
 
         if (aiResult.success && aiResult.data.data) {
             // Use AI recommendation
             recommendedData = aiResult.data.data;
-            dataSource = 'gemini-ai';
-            console.log('💡 Using Gemini AI recommendation');
+            dataSource = 'openrouter-ai';
+            console.log('💡 Using OpenRouter AI recommendation');
         } else {
             // Fallback to database lookup
             console.log('🔄 Falling back to database lookup');
@@ -183,7 +183,7 @@ class AISupervisor {
             air_filter: 0,
             cooling_filter: 0,
             is_matching: 1,
-            mismatch_reason: recommendedData.reasoning || null,
+            mismatch_reason: null,
             operation_type: 'inquiry',
             user_id: session.userId,
             branch_id: session.branchId,
@@ -192,10 +192,10 @@ class AISupervisor {
 
         return {
             success: true,
-            type: 'inquiry',
-            message: `✅ تم تسجيل الاستعلام ${dataSource === 'gemini-ai' ? '(AI)' : ''}`,
+            operation: 'inquiry',
             data: recommendedData,
-            source: dataSource
+            dataSource,
+            message: `✅ تم تسجيل الاستعلام ${dataSource === 'openrouter-ai' ? '(AI)' : ''}`
         };
     }
 
@@ -213,14 +213,14 @@ class AISupervisor {
 
         if (comparison.found) {
             // Try AI comparison first
-            const aiCompareResult = await this.tryGeminiAI({
+            const aiCompareResult = await this.tryOpenRouterAI({
                 serviceData: serviceData,
                 recommended: comparison.recommended
             }, 'compare');
 
             if (aiCompareResult.success && aiCompareResult.data) {
                 // Use AI comparison
-                console.log('💡 Using Gemini AI comparison');
+                console.log('💡 Using OpenRouter AI comparison');
                 isMatching = aiCompareResult.data.isMatching;
                 matchResult = {
                     isMatching: aiCompareResult.data.isMatching,
