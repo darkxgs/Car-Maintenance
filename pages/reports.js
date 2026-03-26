@@ -56,10 +56,24 @@ export default function Reports() {
         </div>
 
         <main className="main-content">
-          <div className="page-header">
+          <div className="page-header glass-panel" style={{
+            padding: '2rem',
+            marginBottom: '2rem',
+            borderRight: '4px solid var(--primary-light)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
             <div>
-              <h1><i className="fas fa-chart-bar"></i> التقارير</h1>
-              <div className="breadcrumb"><a href="/dashboard">الرئيسية</a> / <span>التقارير</span></div>
+              <h1 style={{ 
+                background: 'var(--gradient-primary)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                display: 'inline-flex',
+                alignItems: 'center',
+                fontWeight: 800
+              }}><i className="fas fa-chart-bar" style={{ color: 'var(--primary)', WebkitTextFillColor: 'initial', marginLeft: '0.75rem', fontSize: '1.25em' }}></i> التقارير</h1>
+              <div className="breadcrumb" style={{ marginTop: '0.5rem' }}><a href="/dashboard">الرئيسية</a> / <span>التقارير</span></div>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button className="btn btn-success" id="exportExcelBtn">
@@ -124,8 +138,7 @@ export default function Reports() {
             </div>
           </div>
 
-          {/* Operations Table with Sortable Headers */}
-          <div className="card report-card" style={{ marginTop: '1.5rem' }}>
+          <div className="card glass-panel report-card" style={{ marginTop: '1.5rem', borderTop: '4px solid var(--primary)' }}>
             <div className="card-header">
               <h3><i className="fas fa-list"></i> جميع العمليات</h3>
             </div>

@@ -35,8 +35,22 @@ export default function CarsDatabase() {
         </aside>
 
         <main className="main-content">
-          <div className="page-header">
-            <h1><i className="fas fa-database"></i> قاعدة بيانات السيارات</h1>
+          <div className="page-header glass-panel" style={{
+            padding: '2rem',
+            marginBottom: '2rem',
+            borderRight: '4px solid var(--primary)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h1 style={{ 
+              background: 'var(--gradient-primary)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontWeight: 800
+            }}><i className="fas fa-database" style={{ color: 'var(--primary)', WebkitTextFillColor: 'initial', marginLeft: '0.75rem', fontSize: '1.25em' }}></i> قاعدة بيانات السيارات</h1>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <button id="bulkDeleteBtn" className="btn btn-danger" style={{ display: 'none' }} onClick={() => bulkDeleteSelected()}>
                     <i className="fas fa-trash"></i> حذف المحدد (<span id="selectedCount">0</span>)
@@ -98,56 +112,52 @@ export default function CarsDatabase() {
             <h3 id="modalTitle"><i className="fas fa-car"></i> إضافة سيارة</h3>
             <button className="close-btn" onClick={() => closeModal('carModal')}>&times;</button>
           </div>
-          <div className="modal-body">
+          <div className="modal-body" style={{ padding: '2rem' }}>
             <form id="carForm">
               <input type="hidden" id="carId" />
-              <div className="form-row">
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                 <div className="form-group">
-                  <label>نوع السيارة</label>
-                  <input type="text" id="carBrand" required />
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>نوع السيارة</label>
+                  <input type="text" id="carBrand" className="form-control" required placeholder="مثال: تويوتا" />
                 </div>
                 <div className="form-group">
-                  <label>الموديل</label>
-                  <input type="text" id="carModel" required />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>من سنة</label>
-                  <input type="number" id="carYearFrom" required min="1990" max="2030" />
-                </div>
-                <div className="form-group">
-                  <label>إلى سنة</label>
-                  <input type="number" id="carYearTo" required min="1990" max="2030" />
-                </div>
-                <div className="form-group">
-                  <label>حجم المحرك</label>
-                  <input type="text" id="carEngine" required placeholder="مثال: 2.5L" />
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>الموديل</label>
+                  <input type="text" id="carModel" className="form-control" required placeholder="مثال: كامري" />
                 </div>
               </div>
-              <div className="form-row">
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                 <div className="form-group">
-                  <label>نوع الزيت</label>
-                  <input type="text" id="carOilType" required />
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>من سنة</label>
+                  <input type="number" id="carYearFrom" className="form-control" required min="1990" max="2030" placeholder="مثال: 2015" />
                 </div>
                 <div className="form-group">
-                  <label>اللزوجة (يمكن اختيار أكثر من واحدة بالضغط على Ctrl)</label>
-                  <select id="carOilViscosity" required multiple style={{ height: '120px' }}>
-                    <option value="0W-16">0W-16</option>
-                    <option value="0W-20">0W-20</option>
-                    <option value="0W-30">0W-30</option>
-                    <option value="5W-20">5W-20</option>
-                    <option value="5W-30">5W-30</option>
-                    <option value="5W-40">5W-40</option>
-                    <option value="10W-30">10W-30</option>
-                    <option value="10W-40">10W-40</option>
-                    <option value="15W-40">15W-40</option>
-                    <option value="20W-50">20W-50</option>
-                  </select>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>إلى سنة</label>
+                  <input type="number" id="carYearTo" className="form-control" required min="1990" max="2030" placeholder="مثال: 2020" />
                 </div>
                 <div className="form-group">
-                  <label>الكمية (لتر)</label>
-                  <input type="number" id="carOilQty" required step="0.1" min="0" />
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>حجم المحرك</label>
+                  <input type="text" id="carEngine" className="form-control" required placeholder="مثال: 2.5L" />
+                </div>
+              </div>
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr', gap: '1.5rem' }}>
+                <div className="form-group">
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>نوع الزيت</label>
+                  <input type="text" id="carOilType" className="form-control" required placeholder="مثال: تخليقي بالكامل" />
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>اللزوجة</label>
+                  <div className="viscosity-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                    {['0W-16', '0W-20', '0W-30', '5W-20', '5W-30', '5W-40', '10W-30', '10W-40', '15W-40', '20W-50'].map(val => (
+                      <label key={val} style={{ display: 'block', cursor: 'pointer', margin: 0 }}>
+                        <input type="checkbox" value={val} style={{ display: 'none' }} />
+                        <span className="check-btn" style={{ display: 'block', textAlign: 'center', padding: '0.5rem', background: 'rgba(15, 23, 42, 0.5)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius)', color: 'var(--text-muted)', fontWeight: '600', transition: 'all 0.2s', fontSize: '0.9em' }}>{val}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>الكمية (لتر)</label>
+                  <input type="number" id="carOilQty" className="form-control" required step="0.1" min="0" placeholder="مثال: 4.5" />
                 </div>
               </div>
             </form>
@@ -166,21 +176,21 @@ export default function CarsDatabase() {
             <h3><i className="fas fa-file-import"></i> استيراد سيارات (CSV)</h3>
             <button className="close-btn" onClick={() => closeModal('importModal')}>&times;</button>
           </div>
-          <div className="modal-body">
-            <div className="alert alert-info" style={{ background: '#e3f2fd', color: '#0d47a1', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>
+          <div className="modal-body" style={{ padding: '2rem' }}>
+            <div className="alert alert-info" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '10px', borderRadius: '5px', marginBottom: '15px', border: '1px solid rgba(59, 130, 246, 0.4)' }}>
               <i className="fas fa-info-circle"></i> <strong>تعليمات:</strong><br />
               يرجى تحميل النموذج أولاً وتعبئة البيانات ثم إعادة رفعه.<br />
-              الأعمدة: <code style={{ fontFamily: 'monospace' }}>brand, model, year_from, ...</code>
+              الأعمدة: <code style={{ fontFamily: 'monospace', color: 'var(--primary)' }}>brand, model, year_from, ...</code>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <button className="btn btn-outline" onClick={() => downloadTemplate()} style={{ justifyContent: 'center', borderColor: '#28a745', color: '#28a745' }}>
+              <button className="btn btn-outline" onClick={() => downloadTemplate()} style={{ justifyContent: 'center', borderColor: 'var(--success)', color: 'var(--success)' }}>
                 <i className="fas fa-download"></i> 1. تحميل النموذج المسبق
               </button>
 
-              <div style={{ borderTop: '1px solid #eee', margin: '0.5rem 0' }}></div>
+              <div style={{ borderTop: '1px solid var(--glass-border)', margin: '0.5rem 0' }}></div>
 
-              <label className="btn btn-primary" style={{ justifyContent: 'center', cursor: 'pointer', background: '#6f42c1', border: 'none' }}>
+              <label className="btn btn-primary" style={{ justifyContent: 'center', cursor: 'pointer', border: 'none' }}>
                 <i className="fas fa-upload"></i> 2. اختيار ملف ورفعه
                 <input type="file" id="importFile" accept=".csv" style={{ display: 'none' }} onChange={(e) => importCars(e)} />
               </label>
@@ -420,6 +430,7 @@ export default function CarsDatabase() {
             document.getElementById('modalTitle').innerHTML = '<i class="fas fa-car"></i> إضافة سيارة';
             document.getElementById('carForm').reset();
             document.getElementById('carId').value = '';
+            document.querySelectorAll('.viscosity-grid input[type="checkbox"]').forEach(cb => cb.checked = false);
             document.getElementById('carModal').classList.add('show');
         }
         
@@ -445,9 +456,8 @@ export default function CarsDatabase() {
             
             // Set multiple selected viscosities
             const viscs = car.oil_viscosity ? car.oil_viscosity.split(',').map(s => s.trim()) : [];
-            const select = document.getElementById('carOilViscosity');
-            Array.from(select.options).forEach(opt => {
-                opt.selected = viscs.includes(opt.value);
+            document.querySelectorAll('.viscosity-grid input[type="checkbox"]').forEach(cb => {
+                cb.checked = viscs.includes(cb.value);
             });
             
             document.getElementById('carOilQty').value = car.oil_quantity;
@@ -463,7 +473,7 @@ export default function CarsDatabase() {
                 year_to: parseInt(document.getElementById('carYearTo').value),
                 engine_size: document.getElementById('carEngine').value,
                 oil_type: document.getElementById('carOilType').value,
-                oil_viscosity: Array.from(document.getElementById('carOilViscosity').selectedOptions).map(opt => opt.value).join(', '),
+                oil_viscosity: Array.from(document.querySelectorAll('.viscosity-grid input[type="checkbox"]:checked')).map(cb => cb.value).join(', '),
                 oil_quantity: parseFloat(document.getElementById('carOilQty').value)
             };
 

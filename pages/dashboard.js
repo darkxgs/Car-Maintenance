@@ -61,9 +61,20 @@ export default function Dashboard() {
         </div>
 
         <main className="main-content">
-          <div className="page-header">
-            <h1><i className="fas fa-home"></i> لوحة التحكم</h1>
-            <div className="breadcrumb">
+          <div className="page-header glass-panel" style={{
+            padding: '2rem',
+            marginBottom: '2rem',
+            borderRight: '4px solid var(--primary)'
+          }}>
+            <h1 style={{ 
+              background: 'var(--gradient-primary)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontWeight: 800
+            }}><i className="fas fa-home" style={{ color: 'var(--primary)', WebkitTextFillColor: 'initial', marginLeft: '0.75rem', fontSize: '1.25em' }}></i> لوحة التحكم</h1>
+            <div className="breadcrumb" style={{ marginTop: '0.5rem' }}>
               <span>الرئيسية</span>
             </div>
           </div>
@@ -101,7 +112,7 @@ export default function Dashboard() {
 
           {/* Charts Section */}
           <div className="dashboard-charts" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
-            <div className="card">
+            <div className="card glass-panel" style={{ borderTop: '4px solid var(--primary)' }}>
               <div className="card-header">
                 <h3><i className="fas fa-chart-line"></i> العمليات خلال الـ 30 يوم الماضية</h3>
               </div>
@@ -110,7 +121,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="card">
+            <div className="card glass-panel" style={{ borderTop: '4px solid var(--success)' }}>
               <div className="card-header">
                 <h3><i className="fas fa-chart-pie"></i> توزيع العمليات حسب الفروع</h3>
               </div>
@@ -119,7 +130,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="card">
+            <div className="card glass-panel" style={{ borderTop: '4px solid var(--secondary)' }}>
               <div className="card-header">
                 <h3><i className="fas fa-chart-bar"></i> أنواع الزيوت الأكثر استخداماً</h3>
               </div>
@@ -128,7 +139,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="card">
+            <div className="card glass-panel" style={{ borderTop: '4px solid var(--warning)' }}>
               <div className="card-header">
                 <h3><i className="fas fa-tachometer-alt"></i> توزيع اللزوجة</h3>
               </div>
@@ -138,7 +149,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card" style={{ marginBottom: '2rem' }}>
+          <div className="card glass-panel" style={{ marginBottom: '2rem' }}>
             <div className="card-header">
               <h3><i className="fas fa-bolt"></i> إجراءات سريعة</h3>
             </div>

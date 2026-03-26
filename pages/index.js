@@ -9,9 +9,14 @@ export default function Login() {
       </Head>
 
       <div className="login-page">
-        <div className="login-card">
+        <div className="login-card glass-panel" style={{ borderTop: '4px solid var(--primary)' }}>
           <div className="login-logo">
-            <i className="fas fa-car-side"></i>
+            <i className="fas fa-car-side" style={{ 
+              background: 'var(--gradient-primary)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontSize: '4.5rem'
+            }}></i>
             <h1>نظام صيانة السيارات</h1>
             <p>مرحباً بك، قم بتسجيل الدخول للمتابعة</p>
           </div>

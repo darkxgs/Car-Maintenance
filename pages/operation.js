@@ -56,9 +56,20 @@ export default function Operation() {
         </div>
 
         <main className="main-content">
-          <div className="page-header">
-            <h1><i className="fas fa-oil-can"></i> تسجيل عملية</h1>
-            <div className="breadcrumb"><a href="/dashboard">الرئيسية</a> / <span>تسجيل عملية</span></div>
+          <div className="page-header glass-panel" style={{
+            padding: '2rem',
+            marginBottom: '2rem',
+            borderRight: '4px solid var(--secondary)'
+          }}>
+            <h1 style={{ 
+              background: 'var(--gradient-primary)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontWeight: 800
+            }}><i className="fas fa-oil-can" style={{ color: 'var(--primary)', WebkitTextFillColor: 'initial', marginLeft: '0.75rem', fontSize: '1.25em' }}></i> تسجيل عملية</h1>
+            <div className="breadcrumb" style={{ marginTop: '0.5rem' }}><a href="/dashboard">الرئيسية</a> / <span>تسجيل عملية</span></div>
           </div>
 
           <div className="operation-tabs">
@@ -74,7 +85,7 @@ export default function Operation() {
             </button>
           </div>
 
-          <div className="card tab-content" id="inquiryForm">
+          <div className="card glass-panel tab-content" id="inquiryForm" style={{ borderTop: '4px solid var(--primary)' }}>
             <div className="card-header">
               <h3><i className="fas fa-search"></i> استعلام عن الزيت المناسب</h3>
             </div>
@@ -105,12 +116,12 @@ export default function Operation() {
                   </div>
                 </div>
                 <div className="ai-response" id="inquiryResult"></div>
-                <button type="submit" className="btn btn-primary btn-lg"><i className="fas fa-search"></i> بحث</button>
+                <button type="submit" className="btn btn-primary btn-lg"><i className="fas fa-robot"></i> تحليل بالذكاء الاصطناعي</button>
               </form>
             </div>
           </div>
 
-          <div className="card tab-content" id="serviceForm" style={{ display: 'none' }}>
+          <div className="card glass-panel tab-content" id="serviceForm" style={{ display: 'none', borderTop: '4px solid var(--success)' }}>
             <div className="card-header">
               <h3><i className="fas fa-tools"></i> تسجيل عملية صيانة</h3>
             </div>
