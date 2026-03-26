@@ -287,6 +287,21 @@ export default function Operation() {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="spinner-sm"></span> جاري البحث...';
 
+            const resultDiv = document.getElementById('inquiryResult');
+            resultDiv.className = 'ai-response show loading-scan';
+            resultDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 1.5rem; justify-content: center; padding: 1rem 0;">' +
+                    '<i class="fas fa-brain fa-3x ai-glow-pulse" style="color: var(--primary);"></i>' +
+                    '<div>' +
+                        '<h4 style="margin-bottom: 0.25rem; font-size: 1.2rem; color: var(--dark);">الذكاء الاصطناعي يقوم بالتحليل</h4>' +
+                        '<div style="display: flex; gap: 4px; align-items: center; color: var(--gray); font-size: 1rem;">' +
+                            'جاري دراسة أفضل الخيارات' +
+                            '<div class="typing-dots-container">' +
+                                '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+
             try {
                 const result = await aiSupervisor.processInquiry({
                     brand: document.getElementById('inqBrand').value,
@@ -295,7 +310,7 @@ export default function Operation() {
                     engineSize: document.getElementById('inqEngine').value
                 });
 
-            const resultDiv = document.getElementById('inquiryResult');
+            resultDiv.classList.remove('loading-scan');
             resultDiv.classList.add('show');
 
             if (result.success) {
@@ -330,21 +345,52 @@ export default function Operation() {
 
         document.getElementById('serviceFormEl').addEventListener('submit', async (e) => {
         e.preventDefault();
-      const serviceData = {
-        brand: document.getElementById('svcBrand').value,
-      model: document.getElementById('svcModel').value,
-      year: document.getElementById('svcYear').value,
-      engineSize: document.getElementById('svcEngine').value,
-      oilUsed: document.getElementById('svcOil').value,
-      oilViscosity: document.getElementById('svcViscosity').value,
-      oilQuantity: document.getElementById('svcQuantity').value,
-      oilFilter: document.getElementById('oilFilter').checked,
-      airFilter: document.getElementById('airFilter').checked,
-      coolingFilter: document.getElementById('coolingFilter').checked
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalBtnContent = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-sm"></span> جاري المعالجة...';
+
+        const resultDiv = document.getElementById('serviceResult');
+        resultDiv.className = 'ai-response show loading-scan';
+        resultDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 1.5rem; justify-content: center; padding: 1rem 0;">' +
+                '<i class="fas fa-microchip fa-3x ai-glow-pulse" style="color: var(--success);"></i>' +
+                '<div>' +
+                    '<h4 style="margin-bottom: 0.25rem; font-size: 1.2rem; color: var(--dark);">التحقق الذكي قيد التنفيذ</h4>' +
+                    '<div style="display: flex; gap: 4px; align-items: center; color: var(--gray); font-size: 1rem;">' +
+                        'مراجعة المواصفات الفنية' +
+                        '<div class="typing-dots-container">' +
+                            '<div class="typing-dot" style="background-color: var(--success);"></div>' +
+                            '<div class="typing-dot" style="background-color: var(--success);"></div>' +
+                            '<div class="typing-dot" style="background-color: var(--success);"></div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        try {
+            const serviceData = {
+                brand: document.getElementById('svcBrand').value,
+                model: document.getElementById('svcModel').value,
+                year: document.getElementById('svcYear').value,
+                engineSize: document.getElementById('svcEngine').value,
+                oilUsed: document.getElementById('svcOil').value,
+                oilViscosity: document.getElementById('svcViscosity').value,
+                oilQuantity: document.getElementById('svcQuantity').value,
+                oilFilter: document.getElementById('oilFilter').checked,
+                airFilter: document.getElementById('airFilter').checked,
+                coolingFilter: document.getElementById('coolingFilter').checked
             };
 
-      const result = await aiSupervisor.processService(serviceData);
-      handleServiceResult(result, serviceData);
+            const result = await aiSupervisor.processService(serviceData);
+            resultDiv.classList.remove('loading-scan');
+            handleServiceResult(result, serviceData);
+        } finally {
+            if (typeof submitBtn !== 'undefined') {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnContent;
+            }
+        }
         });
 
       function handleServiceResult(result, serviceData) {
