@@ -121,7 +121,8 @@ class AISupervisor {
             });
         }
 
-        if (serviceData.oilViscosity.toLowerCase() !== recommended.oilViscosity.toLowerCase()) {
+        const recViscosities = recommended.oilViscosity.split(',').map(v => v.trim().toLowerCase());
+        if (!recViscosities.includes(serviceData.oilViscosity.toLowerCase())) {
             mismatches.push({
                 field: 'اللزوجة',
                 expected: recommended.oilViscosity,

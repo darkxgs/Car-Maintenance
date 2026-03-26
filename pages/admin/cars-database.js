@@ -37,11 +37,15 @@ export default function CarsDatabase() {
         <main className="main-content">
           <div className="page-header">
             <h1><i className="fas fa-database"></i> قاعدة بيانات السيارات</h1>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" onClick={() => window.showAddModal()}><i className="fas fa-plus"></i> إضافة سيارة</button>
-              <div style={{ borderLeft: '1px solid #ccc', margin: '0 0.5rem', display: 'none' }} className="desktop-separator"></div>
-              <button className="btn" style={{ backgroundColor: '#6f42c1', color: 'white', border: 'none' }} onClick={() => window.showImportModal()}><i className="fas fa-file-import"></i> استيراد (CSV)</button>
-              <button className="btn btn-secondary" onClick={() => exportToCSV()}><i className="fas fa-file-export"></i> تصدير (CSV)</button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <button id="bulkDeleteBtn" className="btn btn-danger" style={{ display: 'none' }} onClick={() => bulkDeleteSelected()}>
+                    <i className="fas fa-trash"></i> حذف المحدد (<span id="selectedCount">0</span>)
+                </button>
+                <div id="bulkDeleteSeparator" style={{ borderLeft: '1px solid #ccc', height: '20px', margin: '0 0.5rem', display: 'none' }}></div>
+                <button className="btn btn-primary" onClick={() => window.showAddModal()}><i className="fas fa-plus"></i> إضافة سيارة</button>
+                <div style={{ borderLeft: '1px solid #ccc', margin: '0 0.5rem', display: 'none' }} className="desktop-separator"></div>
+                <button className="btn" style={{ backgroundColor: '#6f42c1', color: 'white', border: 'none' }} onClick={() => window.showImportModal()}><i className="fas fa-file-import"></i> استيراد (CSV)</button>
+                <button className="btn btn-secondary" onClick={() => exportToCSV()}><i className="fas fa-file-export"></i> تصدير (CSV)</button>
             </div>
           </div>
 
@@ -69,6 +73,7 @@ export default function CarsDatabase() {
                 <table id="carsTable">
                   <thead>
                     <tr>
+                      <th style={{ width: '40px' }}><input type="checkbox" id="selectAll" onClick={(e) => toggleSelectAll(e.target.checked)} /></th>
                       <th>النوع</th>
                       <th>الموديل</th>
                       <th>السنوات</th>
@@ -126,8 +131,9 @@ export default function CarsDatabase() {
                   <input type="text" id="carOilType" required />
                 </div>
                 <div className="form-group">
-                  <label>اللزوجة</label>
-                  <select id="carOilViscosity" required>
+                  <label>اللزوجة (يمكن اختيار أكثر من واحدة بالضغط على Ctrl)</label>
+                  <select id="carOilViscosity" required multiple style={{ height: '120px' }}>
+                    <option value="0W-16">0W-16</option>
                     <option value="0W-20">0W-20</option>
                     <option value="0W-30">0W-30</option>
                     <option value="5W-20">5W-20</option>
@@ -180,9 +186,6 @@ export default function CarsDatabase() {
               </label>
             </div>
           </div>
-          <div className="modal-footer">
-            <button className="btn btn-outline" onClick={() => closeModal('importModal')}>إغلاق</button>
-          </div>
         </div>
       </div>
 
@@ -213,6 +216,7 @@ export default function CarsDatabase() {
 
             const tbody = document.querySelector('#carsTable tbody');
             tbody.innerHTML = cars.map(c => \`<tr>
+                <td><input type="checkbox" class="row-checkbox" data-id="\${c.id}" onclick="updateBulkDeleteState()" /></td>
                 <td>\${c.brand}</td><td>\${c.model}</td><td>\${c.year_from} - \${c.year_to}</td>
                 <td>\${c.engine_size}</td><td>\${c.oil_type}</td><td>\${c.oil_viscosity}</td><td>\${c.oil_quantity}L</td>
                 <td>
@@ -220,8 +224,61 @@ export default function CarsDatabase() {
                     <button class="btn btn-danger" onclick="deleteCar(\${c.id})" style="padding: 0.5rem;"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>\`).join('');
+            
+            // Reset Select All
+            document.getElementById('selectAll').checked = false;
+            updateBulkDeleteState();
         }
-        
+
+        function toggleSelectAll(checked) {
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = checked);
+            updateBulkDeleteState();
+        }
+
+        function updateBulkDeleteState() {
+            const selected = document.querySelectorAll('.row-checkbox:checked');
+            const count = selected.length;
+            const btn = document.getElementById('bulkDeleteBtn');
+            const separator = document.getElementById('bulkDeleteSeparator');
+            
+            if (btn && separator) {
+                if (count > 0) {
+                    btn.style.display = 'flex';
+                    separator.style.display = 'block';
+                    document.getElementById('selectedCount').textContent = count;
+                } else {
+                    btn.style.display = 'none';
+                    separator.style.display = 'none';
+                }
+            }
+        }
+
+        async function bulkDeleteSelected() {
+            const selected = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => parseInt(cb.dataset.id));
+            if (selected.length === 0) return;
+
+            if (!confirm(\`هل أنت متأكد من حذف \${selected.length} سيارة محددة؟\`)) return;
+
+            try {
+                const response = await fetch('/api/cars', {
+                    method: 'DELETE',
+                    headers: db.getAuthHeaders(),
+                    body: JSON.stringify({ ids: selected })
+                });
+
+                if (response.ok) {
+                    showToast(\`تم حذف \${selected.length} سيارة بنجاح\`, 'success');
+                    await loadCars();
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'فشل الحذف الجماعي', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('حدث خطأ أثناء الحذف الجماعي', 'error');
+            }
+        }
+
         function downloadTemplate() {
             const headers = ['brand', 'model', 'year_from', 'year_to', 'engine_size', 'oil_type', 'oil_viscosity', 'oil_quantity'];
             const exampleRow = ['Toyota', 'Camry', '2018', '2022', '2.5L', 'Synthetic', '0W-20', '4.5'];
@@ -244,13 +301,11 @@ export default function CarsDatabase() {
                 return;
             }
 
-            // Define headers matching DB columns for easier import mapping
             const headers = ['brand', 'model', 'year_from', 'year_to', 'engine_size', 'oil_type', 'oil_viscosity', 'oil_quantity'];
             const csvContent = [
-                headers.join(','), // Header row
+                headers.join(','), 
                 ...cars.map(c => headers.map(h => {
                     const val = c[h] || '';
-                    // Escape commas in strings
                     return typeof val === 'string' && val.includes(',') ? \`"\${val}"\` : val;
                 }).join(','))
             ].join('\\n');
@@ -280,7 +335,6 @@ export default function CarsDatabase() {
                 }
 
                 const headers = rows[0].split(',').map(h => h.trim());
-                // Basic validation of headers
                 const required = ['brand', 'model', 'year_from', 'year_to', 'engine_size', 'oil_type', 'oil_viscosity', 'oil_quantity'];
                 const missing = required.filter(r => !headers.includes(r));
                 
@@ -292,11 +346,9 @@ export default function CarsDatabase() {
                 const carsToAdd = [];
                 const errors = [];
                 
-                // Start from 1 to skip header
                 for (let i = 1; i < rows.length; i++) {
-                    const values = rows[i].split(',');
-                    // Handle simple CSV splitting (doesn't handle quoted commas fully robustly but works for template)
-                    
+                    // Split CSV row properly handling quoted commas, e.g. "0W-20, 5W-30"
+                    const values = rows[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                     if (values.length !== headers.length) {
                         errors.push(\`السطر \${i + 1}: عدد الأعمدة غير صحيح\`);
                         continue;
@@ -309,7 +361,6 @@ export default function CarsDatabase() {
                         let val = values[index].trim();
                         if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
                         
-                        // Parse numbers
                         if (['year_from', 'year_to'].includes(h)) {
                              const num = parseInt(val);
                             if (isNaN(num)) {
@@ -326,7 +377,6 @@ export default function CarsDatabase() {
                             }
                             val = num;
                         }
-                        
                         car[h] = val;
                     });
                     
@@ -336,10 +386,9 @@ export default function CarsDatabase() {
                 }
 
                 if (errors.length > 0) {
-                    // Show first 3 errors to avoid spamming
                     const errorMsg = errors.slice(0, 3).join('<br>');
                     showToast(\`وجدنا بعض الأخطاء:<br>\${errorMsg}\${errors.length > 3 ? '<br>...والمزيد' : ''}\`, 'warning');
-                    if (carsToAdd.length === 0) return; // Stop if nothing matches
+                    if (carsToAdd.length === 0) return;
                 }
 
                 if (carsToAdd.length === 0) {
@@ -354,9 +403,7 @@ export default function CarsDatabase() {
                 
                 try {
                     showToast(\`جاري استيراد \${carsToAdd.length} سيارة... هذا قد يستغرق لحظات\`, 'info');
-                    // Hide the Import modal, but keep working
                     document.getElementById('importModal').classList.remove('show');
-                    
                     await db.add('cars', carsToAdd);
                     showToast(\`تم استيراد \${carsToAdd.length} سيارة بنجاح\`, 'success');
                     await loadCars();
@@ -364,7 +411,6 @@ export default function CarsDatabase() {
                     console.error(err);
                     showToast('حدث خطأ أثناء الاستيراد. تأكد من صحة البيانات.', 'error');
                 }
-                
                 event.target.value = '';
             };
             reader.readAsText(file);
@@ -396,7 +442,14 @@ export default function CarsDatabase() {
             document.getElementById('carYearTo').value = car.year_to;
             document.getElementById('carEngine').value = car.engine_size;
             document.getElementById('carOilType').value = car.oil_type;
-            document.getElementById('carOilViscosity').value = car.oil_viscosity;
+            
+            // Set multiple selected viscosities
+            const viscs = car.oil_viscosity ? car.oil_viscosity.split(',').map(s => s.trim()) : [];
+            const select = document.getElementById('carOilViscosity');
+            Array.from(select.options).forEach(opt => {
+                opt.selected = viscs.includes(opt.value);
+            });
+            
             document.getElementById('carOilQty').value = car.oil_quantity;
             document.getElementById('carModal').classList.add('show');
         }
@@ -410,7 +463,7 @@ export default function CarsDatabase() {
                 year_to: parseInt(document.getElementById('carYearTo').value),
                 engine_size: document.getElementById('carEngine').value,
                 oil_type: document.getElementById('carOilType').value,
-                oil_viscosity: document.getElementById('carOilViscosity').value,
+                oil_viscosity: Array.from(document.getElementById('carOilViscosity').selectedOptions).map(opt => opt.value).join(', '),
                 oil_quantity: parseFloat(document.getElementById('carOilQty').value)
             };
 
@@ -433,24 +486,12 @@ export default function CarsDatabase() {
             await loadCars();
         }
 
-        // Attach event listeners safely
         if (typeof document !== 'undefined') {
             const addBtn = document.querySelector('.page-header .btn-primary');
-            if (addBtn) addBtn.addEventListener('click', showAddModal);
+            if (addBtn) addBtn.onclick = showAddModal;
             
             const searchBtn = document.querySelector('.card .btn-primary');
-            if (searchBtn) searchBtn.addEventListener('click', loadCars);
-            
-            // Note: close buttons are now inline onclick usually, but let's keep this safe
-            document.querySelectorAll('.modal-overlay .close-btn').forEach(btn => btn.addEventListener('click', (e) => {
-                 const modal = e.target.closest('.modal-overlay');
-                 if(modal) modal.classList.remove('show');
-            }));
-            
-            document.querySelectorAll('.modal-footer .btn-outline').forEach(btn => btn.addEventListener('click', (e) => {
-                 const modal = e.target.closest('.modal-overlay');
-                 if(modal) modal.classList.remove('show');
-            }));
+            if (searchBtn) searchBtn.onclick = loadCars;
             
             // Expose vars for inline onclicks (legacy vibe but works for this)
             window.editCar = editCar;
@@ -462,6 +503,21 @@ export default function CarsDatabase() {
             window.closeModal = closeModal;
             window.saveCar = saveCar;
             window.downloadTemplate = downloadTemplate;
+            window.toggleSelectAll = toggleSelectAll;
+            window.updateBulkDeleteState = updateBulkDeleteState;
+            window.bulkDeleteSelected = bulkDeleteSelected;
+            
+            // Add listeners for close buttons
+            document.querySelectorAll('.modal-overlay .close-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                 const modal = e.target.closest('.modal-overlay');
+                 if(modal) modal.classList.remove('show');
+            }));
+            
+            document.querySelectorAll('.modal-footer .btn-outline').forEach(btn => btn.addEventListener('click', (e) => {
+                 const modal = e.target.closest('.modal-overlay');
+                 if(modal) modal.classList.remove('show');
+            }));
+            
         }
       `}</Script>
     </>

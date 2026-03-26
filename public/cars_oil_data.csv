@@ -1,0 +1,15 @@
+brand,model,year_from,year_to,engine_size,oil_type,oil_viscosity,oil_quantity
+Honda,Accord,2023,2024,1.5L,Synthetic,0W-20,3.5
+Honda,Accord,2023,2024,2.0L Hybrid,Synthetic,0W-20,4.0
+Honda,Accord,2018,2022,1.5L,Synthetic,0W-20,3.5
+Honda,Accord,2018,2022,2.0L Turbo,Synthetic,0W-20,4.8
+Honda,Accord,2018,2022,2.0L Hybrid,Synthetic,0W-20,3.8
+Honda,Accord,2013,2017,3.5L,Synthetic,0W-20,4.3
+Honda,Accord,2013,2017,2.4L,Synthetic,0W-20,4.2
+Honda,Accord,2014,2017,2.0L Hybrid,Synthetic,0W-20,3.8
+Honda,Accord,2008,2012,3.5L,Synthetic,0W-20,4.0
+Honda,Accord,2008,2012,2.4L,Synthetic,0W-20,4.0
+Honda,Accord,2003,2007,3.0L,Synthetic,5W-20,4.3
+Honda,Accord,2003,2007,2.4L,Synthetic,5W-20,4.2
+Honda,Accord,1998,2002,3.0L,Synthetic,"5W-30, 10W-30",4.4
+Honda,Accord,1998,2002,2.3L,Synthetic,"5W-30, 10W-30",4.3
